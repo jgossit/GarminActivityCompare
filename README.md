@@ -7,6 +7,11 @@ This looks similar to the 'player' on Garmin Connect, however that is only capab
 
 By providing two Garmin activities of an identical (or close to) route/distance, you can get a visual comparison of where the two activities are at the same point in time, the distance each has travelled (keeping in mind the devices may vary slightly in distance recording) and the gap between them. The pace, as an average of up to the last 10 seconds, for both activities is also displayed.
 
+There are controls for<br>
+- Play/Pause and Stop (return to the start) of the playback<br>
+- Slider showing the Activity progress, which can also be used to scan through/check individual points<br>
+- Slider to control the playback speed
+
 The typical use case is for comparing two runners competing in the same race or for a single runner competing the same race/route on multiple occasions.
 
 
@@ -18,7 +23,7 @@ Compile:<br>
 and run:<br>
 &nbsp;&nbsp;<i>java jgossit.GarminActivityCompare</i>
 
-Or download the jar file from \bin and execute:<br>
+Or download the jar file from \bin and execute (Java 6+):<br>
 &nbsp;&nbsp;<i>java -jar GarminActivityCompare.jar</i>
   
 Then follow the prompts to provide<br>
@@ -29,11 +34,36 @@ The order of the two files is not important, the slower time will be (A) and it'
 
 
 Output
-==============
+======
 
 A single HTML file containing everything necessary will be output to the directory containing the Garmin Activity files with the name '&lt;Activity A Name&gt; - &lt;Activity A Date&gt;.html'
 
-An example is available in \example or by clicking the link below. (Note: you will need to save the raw file content locally to a .html file and then open it)
+An example is available in \example or by clicking an image below. (Note: you will need to save the raw file content locally to a .html file and then open it)
 <p align="center" >
   <a href="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km.html"><img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km.png"></a>
+  <br>At the start
 </p>
+<br>
+<p align="center" >
+  <a href="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km.html"><img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km-2.png"></a>
+  <br>In progress
+</p>
+
+
+Requirements
+============
+
+Java 6+ to compile or run the jar.<br>
+Firefox and Chrome play the output well but Internet Explorer (8) seems to run it extremely slowly.
+
+
+Credits
+=======
+
+Map markers are from http://www.benjaminkeen.com/google-maps-coloured-markers/<br>
+And converted to Base64 data with http://websemantics.co.uk/online_tools/image_to_data_uri_convertor/
+
+
+License
+=======
+See the LICENSE file
