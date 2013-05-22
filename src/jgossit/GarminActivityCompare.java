@@ -1,6 +1,6 @@
 /**
  * @author Jason Gossit
- * @version 1.0, 04/30/13
+ * @version 1.1, 22/05/13
  */
 package jgossit;
 
@@ -18,14 +18,15 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-public class GarminActivityCompare {
-
+public class GarminActivityCompare
+{
 	PrintWriter printWriter;
 	String title;
 	String activityDir = null;
 	String[] activityFilenames = { "", "" };
 	String[] activityNames = { "", "" };
 	String[] activityTimes = { "", "" };
+	BufferedReader[] activityBufferedReaders = new BufferedReader[2];
 	SimpleDateFormat gpxTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
 	SimpleDateFormat filenameTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
 	{
@@ -37,17 +38,29 @@ public class GarminActivityCompare {
 	String markerAImageData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAiCAYAAABfqvm9AAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAATcSURBVHjaYmTADeSB2AWI9YGYDyr2BYgvAfFeIL6LTRNAADFiEeMC4nIgzmRl5xYVktJm4BGQZWBgZGT4+uEJw9unVxh+//zyDig/C4jbgPgzsmaAAEI3UBGI13DzSxrpOxcxqJpG/ucTkmZgZmQAq/v7n+H/5/fPGe6eX814fncPw5d3j68ChUOA+AbMAIAAQjZQBYj3y2q5ybglLfvPzy/M+Oc/0JB/qDYyATErM9DvXz8y7F4Qz3D/wsZXQCFnIL4CkgcIIJiBnEB8VFbT3dA/bxMDEyMbw18G/ABoJsP//38Zts4KZbh3fj3IheZA/AkggJig8mXcAtKGHimL/2Mz7MiqAob1fQ4Mn98+gIuB1DAyMzO4Jcz/zyeipAHk1oLEAQIIZJEkEE8z927kV9J2Zvz9H9UwkCG75kYC6Ydgvpy2B1zuP1AtJzsHIxMbF8P9S5tVQeEPEEAgFzqwsHLJqpqGMfz+h+m1exc2gGl9p3yG68cXYMiD9CgbBv1n5xIUBYUlQACBDDQWktJk4AXG5r//mAZe3DuBQVHfn0HDMoHh1/ePDDfQDAXp4eIWZhSW1gVxdQACCGSgMDc/OGlggDePLzB8fvcQbJiIrAHQUnmwBeiACWgKj6AMiMkPEEDgSGFkYsQakxf3QTSzcwkwPL11gEFa3YHhzZOLYIswcggjxAyAAGIB4vdf3j0FJVoU8PPbB3j4behzxLDIOR7hdZDWL++fgJifAAIIZOCZ9y+vAwWeMXDxSzHAzL1/cQM4zMKrz4O9CwPbpgeALbIJ/QB2OchdXz+9+//mySUQ8wpAAIG8fPD3z6/P7p5fx8DCjHAFKEZBYYZsGAjAIgdkIdiLQBPuX97E+PPb+7egnAYQQCADnwLx7DM7Oxm+f/v4H+ZdcFJxLsAIKyWDAHCsg8MRqPrnz8//T29rBUmBwuAOQADBYoMHiE8q6gdo+WSu/f+PAUcsoWc/Job/O+ZEM946tewekGsKxO8AAgjmyV+gMu7DyxtB71/e5lMzCQbnAnwA5NU9i9IYbxxf+AbI9QJicL4ECCCkUGMAhcGBd8+uRALTEbuipj1GSYNs2Pm9kxnObG/9AeT6APFpmBxAADGjqX0OiuCnNw+GSKraMwiJKmDkHpBhb55e+b9jdgTjv7+/84FCa5HlAQKICYsDVgJDe8nBFbkMv379+I8tMI+sLWf88+vbflChgi4HEEBMOIKoFljUf7x8cAYjK5IfQOx7l7YxPLyyDcStwaYRIIBwGQgK4FkX901i+PHjO9yVwOgH5pKJIOYWID6GTSNAADHhicjJn97e//Lg8lZGULgxg8Lu+TWGx9f3gOVwaQIIIHwGPgbiTTdPLYHEHtCZd86uASanf6BqdBcuTQABxEQg7a55ducww9ev7xn+Ab0LdC1IbBM+DQABRMjAwz++vPv4+tEFhq9f3gCTy0Vw+YBPA0AAsRAwEJQLLr95ct6GEWj1398/X0BbDjgBQACxEJFlzwKTkM3f36DcyXAZVFrhUwwQQMQYePXjqzvAIusTAyHXgQBAABFj4MPP7x4xfPv0ElxMElIMEEDEGPjm68fnsHrnESHFAAFEjIGf//399R/YVACZ+ImQYoAAYiLCwI9A/A2piMMLAAKIhUgDn0EbVK8JKQYIMABhubHIul5+4wAAAABJRU5ErkJggg==";
 	String markerBImageData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAiCAYAAABfqvm9AAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAATkSURBVHjaYmTADeSB2AWI9YGYDyr2BYgvAfFeIL6LTRNAADFiEeMC4nIgzmTnYhOV0hBlEJDmY2AEqvzw7DPD0+uvGH5+/fUOKD8LiNuA+DOyZoAAQjdQEYjX8IvzGjlnmTOYBGn/F5YUABrGDFb3///f/+9ffmI4v/Ea466pxxneP/10FSgcAsQ3YAYABBCygSpAvF/LUUkmaVbQf34hfsb/DH8Z/v7/i+YlJgZmRhaGrx+/MMzP3sBwcfvNV0BhZyC+ApIHCCCYgZxAfFTTUckwd1k0AzMbM8M/NIPQARMjUM3f/wyzElcynN96A+RCcyD+BBBAMAPrBSR5G2oOZPznFeFmBBl2fPlFMEYGwnICDGGtbgyc/BxgPjPQ0O+ffv5vcpjO+Pbhhx6gUClAADEBCUkgTnbOsmTgF+FjhLns7eMPDLePPWRQs5EHY1ldcYaL224wVBtOglsACg4uPi5GrwJbEDceFAcAAcQCJBzYOFllTQO0gd78g+E1nzJ7OFvNWoFhRtwqhidXXjDI6EiAxUB6DH00/69t2C367eMPZ4AAArnQWEJNhEFIip/hHxDiAxe23YR4XVYALgbSwy3EzSilJQbi6gAEEMiFwsDwA8YeM8gTGIZkijSj8ENbEGEIjyAgFJQCp31+gABiAUc1IyNOV3mX2cHZF7feZFhds4tBRlcC6H151OQENQMggEAGvv/w/DPDfwbsyQQ5DEHsIqUucOyjGvif4f2zTyDGJ4AAAoXhmRe33jC8f/4J6G1GvGH4/eMPUDJh4OJnR0rojAyf3n/5//TqSxD3CkAAgVx48Oe3X8/Ob7ku5ZxqyfDn/28UQ/r8FsHZoKQEApaR+kgJnIXh0vabjMAYfgvKaQABBHLhUyCevWPSEYZvn779hydiYEyqWqGGk4GXOkPhxjh4kgGBn19+/N/WdwjEXADEdwACCOZHHiA+qe+lrpW5MOL/f8Z/+P0OBcCc8n922hrG02uv3ANyTYH4HUAAMUPlfoHKuJe33wa9uPuGz9RPBxjM/wkYxsKwsGAj44kVl94AuV5A/AAkDhBAzEhqQGFw4Nn115HAFMCuaaMKTLJ/cRq2d9Zxhu19R36AIh+IT8PkAAKIGU3tcyC+f/PYgxBVKzkGMXkRoDv/YRj29PrL/7NT1jD+/fMvHyi0FlkeIICYsDhgJdCUJSsrtjP8/PHzP7aktLZhF+Ov77/3A5nT0OUAAogJRxDVAov6j4fmnwGW1axwQRYg+9LumwxX9twBcWuwaQQIIFwGggJ41r5ZJxm+f/8Od+U/oNP3zTwJYm4B4mPYNAIEEBOeiJz89tGHL1d23WYEJV5QYfrsxkuG6wfvgeVwaQIIIHwGPgbiTSdXX4JmMWaGc5uuMfz/9x8ksAuXJoAAYiKQdtfcOf6I4euHL+By7/Lu2yCxTfg0AAQQIQMPf/3w/eOjyy8Yvrz9Ai6pgWAbPg0AAcRCwEBQLrj85PILG1C0/Pn19wW05YATAAQQCxFZ9iwwCdn8/gXONZeB+Cs+xQABRIyBV1/de8fw/fNPBkKuAwGAACLGwIfvnnxk+Pwa7LDrhBQDBBAxBr758PIzsCAFJ+5HhBQDBBAxBn7+9/vf/38M4OzyiZBigABiIsLAj0D8DamIwwsAAoiFSAOfQRtUrwkpBggwAK1GpdpHAecTAAAAAElFTkSuQmCC";
 	
+	public GarminActivityCompare()
+	{
+		
+	}
+	
+	public GarminActivityCompare(PrintWriter printWriter, String title,	BufferedReader[] activityBufferedReaders)
+	{
+		this.printWriter = printWriter;
+		this.title = title;
+		this.activityBufferedReaders = activityBufferedReaders;
+	}
+
+
 	public static void main(String[] args) throws IOException, ParseException
 	{
-		new GarminActivityCompare().go();
+		new GarminActivityCompare().promptForActivities();
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void go() throws IOException, ParseException
+	public void go() throws IOException, ParseException
 	{
-		promptForActivities();
-		
-		System.out.println("Creating comparison file...");
+		if (activityDir != null)
+			System.out.println("Creating comparison file...");
 		ArrayList<Double>[] lats = new ArrayList[activityFilenames.length];
 		ArrayList<Double>[] lons = new ArrayList[activityFilenames.length];
 		ArrayList<Double>[] distancesTravelled = new ArrayList[activityFilenames.length];
@@ -57,7 +70,7 @@ public class GarminActivityCompare {
 			lats[i] = new ArrayList<Double>();
 			lons[i] = new ArrayList<Double>();
 			distancesTravelled[i] = new ArrayList<Double>();
-			BufferedReader bufferedReader = new BufferedReader(new FileReader(activityDir + activityFilenames[i]));
+			BufferedReader bufferedReader = activityBufferedReaders[i];
 			String line = null;
 			boolean reachedStart = false;
 			Date prevTime = null;
@@ -114,21 +127,18 @@ public class GarminActivityCompare {
 		}
 		
 		int[] activityOrder = (lats[0].size() >= lats[1].size() ? new int[]{0,1} : new int[]{1,0}); // longest activity first
-		File outputFile = new File(activityDir + activityNames[activityOrder[0]] + " - " + activityTimes[activityOrder[0]] + ".html");
-		if (outputFile.exists())
-			outputFile.delete();
-		printWriter = new PrintWriter(outputFile);
+		File outputFile = null;
+		if (activityDir != null)
+		{
+			outputFile = new File(activityDir + activityNames[activityOrder[0]] + " - " + activityTimes[activityOrder[0]] + ".html");
+			if (outputFile.exists())
+				outputFile.delete();
+			printWriter = new PrintWriter(outputFile);
+			title = outputFile.getName().substring(0,outputFile.getName().length()-5);
+		}
 		
 		for(int i=0;i<activityOrder.length;i++)
 		{
-			/*htmlContent.add("	  var coords" + (i+1) + " = [\n");
-			for (int j=0;j<lats[activityOrder[i]].size();j++)
-			{
-				htmlContent.add(String.format("\t\tnew google.maps.LatLng(%s, %s)%s\n",
-						lats[activityOrder[i]].get(j),
-						lons[activityOrder[i]].get(j),
-						j+1 < lats[activityOrder[i]].size() ? "," : "];\n"));
-			}*/
 			htmlContent.add("	  var lats" + (i+1) + " = [ ");
 			for (int j=0;j<lats[activityOrder[i]].size();j++)
 			{
@@ -224,14 +234,16 @@ public class GarminActivityCompare {
 
 		}
 		
-		title = outputFile.getName().substring(0,outputFile.getName().length()-5);
 		printHeader(lats[activityOrder[0]].size());
 		for (String htmlLine : htmlContent)
 			printWriter.print(htmlLine);
 		printFooter();
-		printWriter.close();
-		
-		System.out.format("Comparison file created at '%s'", outputFile.getAbsolutePath());
+				
+		if (activityDir != null)
+		{
+			printWriter.close();
+			System.out.format("Comparison file created at '%s'", outputFile.getAbsolutePath());
+		}
 	}
 	
 	private void promptForActivities() throws IOException, ParseException
@@ -327,9 +339,11 @@ public class GarminActivityCompare {
 					activityFilenames[i] = activityFiles[activityNumbers[i]].getName();
 					activityNames[i] = names[activityNumbers[i]];
 					activityTimes[i] = times[activityNumbers[i]];
+					activityBufferedReaders[i] = new BufferedReader(new FileReader(activityDir + activityFilenames[i]));
 				}
 			}
 		}
+		go();
 	}
 	
 	private void printHeader(int numPoints)
@@ -640,5 +654,18 @@ public class GarminActivityCompare {
 	    double distance = earthRadius * c;
 
 	    return distance;
+	}
+	
+	public void setPrintWriter(PrintWriter printWriter) {
+		this.printWriter = printWriter;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public void setActivityBufferedReaders(BufferedReader[] activityBufferedReaders)
+	{
+		this.activityBufferedReaders = activityBufferedReaders;
 	}
 }
