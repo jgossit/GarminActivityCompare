@@ -76,8 +76,9 @@ Firefox and Chrome play the output well but Internet Explorer (8) seems to run i
 
 
 Servlet:
-Your App server of choice to deploy the servlet
-Apache Commons FileUpload
+
+Your App server of choice to deploy the servlet<br>
+Apache Commons FileUpload<br>
 Apache Commons IO
 
 
