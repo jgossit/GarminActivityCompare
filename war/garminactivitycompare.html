@@ -1,0 +1,40 @@
+<html>
+<head>
+	<title>Garmin Activity Compare</title>
+	<link type="text/css" href="jquery-ui.css" rel="Stylesheet"/>
+	<script type="text/javascript" src="jquery-1.9.1.js"></script>
+	<script type="text/javascript" src="jquery-ui.js"></script>
+	<style>
+		input,label,button {
+			color:white;
+			font-family:verdana;
+			font-size:12px;
+			margin-bottom:10px;
+			margin-left:10px;
+		}
+	</style>
+	<script>
+		$(function()
+		{
+			$('#button').button().click(function()
+			{
+				$("#form").submit();
+			});
+			$('#button').css("font-size","12px").css("font-family","verdana");
+		});
+	</script>
+</head>
+<body background="images/bg.jpg">
+	<div align="center">
+		<img src="images/garmin.png"/><br>
+		<form id="form" action="garminactivitycompare" enctype="multipart/form-data" method="post">
+			<label for="file1">Activity #1</label>
+			<input type="file" size="40" id="file1" name="file1"/><br/>
+			<label for="file2">Activity #2</label>
+			<input type="file" size="40" id="file2" name="file2"/><br/>
+			<button id="button">Go</button>
+		</form>
+	</div>
+	<div id="result"></div>
+</body>
+</html>
