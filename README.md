@@ -1,7 +1,7 @@
 GarminActivityCompare
 =====================
 
-Garmin Activity Compare is a java application designed to compare two Garmin activities visually over a Google Maps route.
+Garmin Activity Compare is a java application/java servlet designed to compare two Garmin activities visually over a Google Maps route.
 
 This looks similar to the 'player' on Garmin Connect, however that is only capable of displaying a single activity while the 'compare' function on Garmin Connect only compares a table of lap times.
 
@@ -18,6 +18,8 @@ The typical use case is for comparing two runners competing in the same race or 
 Usage
 =====
 
+Application:
+
 Compile:<br>
 &nbsp;&nbsp;<i>javac jgossit\GarminActivityCompare.java</i><br>
 and run:<br>
@@ -31,6 +33,20 @@ Then follow the prompts to provide<br>
 2) The numbers of the two Garmin Activity files
 
 The order of the two files is not important, the slower time will be (A) and it's Acitivity Name and Date will be used for the output filename, and the faster time (B).
+
+
+Servlet:
+
+The war directory contains a WEB-INF/web.xml for deploying the servlet to your app server and the ui files for obtaining the activity files to pass to the servlet and displaying the response.
+
+
+Demo
+====
+
+Available here <a target="_blank" href="http://jgossit.appspot.com/garminactivitycompare.html">jgossit.appspot.com/garminactivitycompare.html</a>
+<p align="center" >
+  <img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/web form.png">
+</p>
 
 
 Output
@@ -53,8 +69,16 @@ An example is available in \example or by clicking an image below. (Note: you wi
 Requirements
 ============
 
+Application:
+
 Java 6+ to compile or run the jar.<br>
 Firefox and Chrome play the output well but Internet Explorer (8) seems to run it extremely slowly.
+
+
+Servlet:
+Your App server of choice to deploy the servlet
+Apache Commons FileUpload
+Apache Commons IO
 
 
 Credits
