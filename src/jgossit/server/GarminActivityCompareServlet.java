@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
-import java.util.List;
+import java.util.ArrayList;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,15 +14,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import jgossit.GarminActivityCompare;
 
-import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 public class GarminActivityCompareServlet extends HttpServlet
 {
 	private static final long serialVersionUID = 1L;
-	private static final int MAX_SIZE = 512000; // 500kb
 	private static final String REDIRECT_PAGE = "garminactivitycompare.html";
 	private static final String ACCEPT_EXTENSION = ".gpx";
 	
@@ -32,34 +31,36 @@ public class GarminActivityCompareServlet extends HttpServlet
 		if (!isMultipart)
 			resp.sendRedirect(REDIRECT_PAGE);
 		
-		DiskFileItemFactory fileItemFactory = new DiskFileItemFactory();
-		fileItemFactory.setSizeThreshold(MAX_SIZE);
-		ServletFileUpload upload = new ServletFileUpload(fileItemFactory);
-		upload.setSizeMax(MAX_SIZE);
-		upload.setFileSizeMax(MAX_SIZE);
+		ServletFileUpload upload = new ServletFileUpload();
 		try
 		{
-			List<FileItem> items = upload.parseRequest(req);
-			if (items.size() != 2)
-				resp.sendRedirect(REDIRECT_PAGE);
-			
-			BufferedReader[] activityBufferedReaders = new BufferedReader[2];
+			@SuppressWarnings("unchecked")
+			ArrayList<String>[] activityContents = new ArrayList[2];
 			String title = null;
-			for (int i=0;i<2;i++)
+			FileItemIterator iterator = upload.getItemIterator(req);
+			int count = 0;
+			while (iterator.hasNext())
 			{
-				if (!items.get(i).getName().endsWith(ACCEPT_EXTENSION))
+				FileItemStream item = iterator.next();
+				if (!item.getName().endsWith(ACCEPT_EXTENSION))
 					resp.sendRedirect(REDIRECT_PAGE);
 				
-				InputStream inputStream = items.get(i).getInputStream();
-				activityBufferedReaders[i] = new BufferedReader(new InputStreamReader(inputStream));
-				if (i == 0)
-				{
-					File outputFile = new File(items.get(i).getName());
-					title = outputFile.getName().substring(0,outputFile.getName().length() - ACCEPT_EXTENSION.length());
-				}
+		        if (title == null)
+		        {
+		        	File uploadFile = new File(item.getName());
+		        	title = uploadFile.getName().substring(0,uploadFile.getName().length() - ACCEPT_EXTENSION.length());
+		        }
+		        InputStream inputStream = item.openStream();
+		        ArrayList<String> activityContent = new ArrayList<String>();
+		        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+		        String line = null;
+		        while ((line = br.readLine()) != null)
+		        	activityContent.add(line);
+		        activityContents[count++] = activityContent;
+		        br.close();
 			}
 			
-			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title, activityBufferedReaders);
+			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title, activityContents);
 			garminActivityCompare.go();
 		}
 		catch (FileUploadException e)

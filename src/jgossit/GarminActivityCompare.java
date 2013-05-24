@@ -22,11 +22,13 @@ public class GarminActivityCompare
 {
 	PrintWriter printWriter;
 	String title;
+	String gapsChartData = "";
 	String activityDir = null;
 	String[] activityFilenames = { "", "" };
 	String[] activityNames = { "", "" };
 	String[] activityTimes = { "", "" };
-	BufferedReader[] activityBufferedReaders = new BufferedReader[2];
+	@SuppressWarnings("unchecked")
+	ArrayList<String>[] activityContents = new ArrayList[2];
 	SimpleDateFormat gpxTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
 	SimpleDateFormat filenameTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
 	{
@@ -43,11 +45,11 @@ public class GarminActivityCompare
 		
 	}
 	
-	public GarminActivityCompare(PrintWriter printWriter, String title,	BufferedReader[] activityBufferedReaders)
+	public GarminActivityCompare(PrintWriter printWriter, String title,	ArrayList<String>[] activityContents)
 	{
 		this.printWriter = printWriter;
 		this.title = title;
-		this.activityBufferedReaders = activityBufferedReaders;
+		this.activityContents = activityContents;
 	}
 
 
@@ -70,13 +72,11 @@ public class GarminActivityCompare
 			lats[i] = new ArrayList<Double>();
 			lons[i] = new ArrayList<Double>();
 			distancesTravelled[i] = new ArrayList<Double>();
-			BufferedReader bufferedReader = activityBufferedReaders[i];
-			String line = null;
 			boolean reachedStart = false;
 			Date prevTime = null;
 			Double lat = null, prevLat = null;
 			Double lon = null, prevLon = null;
-			while ((line = bufferedReader.readLine()) != null)
+			for (String line : activityContents[i])
 			{
 				if (line.contains("<trk>"))
 					reachedStart = true;
@@ -123,7 +123,6 @@ public class GarminActivityCompare
 					}
 				}
 			}
-			bufferedReader.close();
 		}
 		
 		int[] activityOrder = (lats[0].size() >= lats[1].size() ? new int[]{0,1} : new int[]{1,0}); // longest activity first
@@ -231,6 +230,12 @@ public class GarminActivityCompare
 					distance,
 					trkPointA+1 < lats[activityOrder[0]].size() ? "," : "];\n",
 					trkPointA > 0 && trkPointA % 10 == 0 ? "\n\t\t" : ""));
+			
+			if (trkPointA == lats[activityOrder[0]].size()-1 || trkPointA % 10 == 0) // first,last and every tenth second
+			{
+				String minsSeconds = String.format("%.0f",Math.floor(trkPointA/60)) + ":" + String.format("%02d",trkPointA % 60);
+				gapsChartData += ",\n\t['" + minsSeconds + "', " + Double.parseDouble(String.format("%.3f",distance)) + "]";
+			}
 
 		}
 		
@@ -339,7 +344,13 @@ public class GarminActivityCompare
 					activityFilenames[i] = activityFiles[activityNumbers[i]].getName();
 					activityNames[i] = names[activityNumbers[i]];
 					activityTimes[i] = times[activityNumbers[i]];
-					activityBufferedReaders[i] = new BufferedReader(new FileReader(activityDir + activityFilenames[i]));
+					ArrayList<String> activityContent = new ArrayList<String>();
+			        BufferedReader br = new BufferedReader(new FileReader(activityDir + activityFilenames[i]));
+			        String line = null;
+			        while ((line = br.readLine()) != null)
+			        	activityContent.add(line);
+			        activityContents[i] = activityContent;
+			        br.close();
 				}
 			}
 		}
@@ -439,7 +450,9 @@ public class GarminActivityCompare
 		printWriter.println("    <script type=\"text/javascript\"");
 		printWriter.println("      src=\"http://google-maps-utility-library-v3.googlecode.com/svn/tags/infobox/1.1.12/src/infobox.js\">");
 		printWriter.println("    </script>");
+		printWriter.println("    <script type=\"text/javascript\" src=\"https://www.google.com/jsapi\"></script>");
 		printWriter.println("    <script type=\"text/javascript\">");
+		printWriter.println("     google.load(\"visualization\", \"1\", {packages:[\"corechart\"]});");
 		printWriter.println("	  var map;");
 		printWriter.println("	  var updateDistance = 0;");
 		printWriter.println("	  var marker1;");
@@ -458,6 +471,7 @@ public class GarminActivityCompare
 		printWriter.println("	  var neutral = '&#x25AC;';");
 		printWriter.println("	  var downArrow = '<font color=\"red\">&#x25BC;</font>';");
 		printWriter.println("	  var lastGap = 0;");
+		printWriter.println("	  var chart = null;");
 	}
 	
 	private void printFooter()
@@ -485,6 +499,32 @@ public class GarminActivityCompare
 		printWriter.println("		polyline.setMap(map);");
 		printWriter.println("");
 		printWriter.println("		reset();");
+		printWriter.println("		$('#gapChartButton').button().click(function()");
+		printWriter.println("		{");
+		printWriter.println("			var label = $(this).button('option','label');");
+		printWriter.println("			if (label == 'Show Gap over Time chart')");
+		printWriter.println("			{");
+		printWriter.println("				$(this).button('option','label','Hide Gap over Time chart');");
+		printWriter.println("				$('#gapChart').css('position','relative').css('left','0px');");
+		printWriter.println("				if (chart == null)");
+		printWriter.println("			    {");
+		printWriter.println("                   var data = google.visualization.arrayToDataTable([");
+		printWriter.println("                     ['Time', 'Gap']" + gapsChartData);
+		printWriter.println("                   ]);");
+		printWriter.println("                   var options = {");
+		printWriter.println("                     title: 'Gap (km) over time (mm:ss)', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
+		printWriter.println("                     legend:{position: 'none'}, vAxis:{title: 'Gap'}");
+		printWriter.println("                   };");
+		printWriter.println("                   chart = new google.visualization.LineChart(document.getElementById('gapChart'));");
+		printWriter.println("                   chart.draw(data, options);");
+		printWriter.println("			    }");
+		printWriter.println("			}");
+		printWriter.println("			else");
+		printWriter.println("			{");
+		printWriter.println("				$(this).button('option','label','Show Gap over Time chart');");
+		printWriter.println("				$('#gapChart').css('position','absolute').css('left','-100000px');");
+		printWriter.println("			}");
+		printWriter.println("		});");
 		printWriter.println("	  }");
 		printWriter.println("	  ");
 		printWriter.println("	  function play()");
@@ -623,9 +663,12 @@ public class GarminActivityCompare
 		printWriter.println("");
 		printWriter.println("      google.maps.event.addDomListener(window, 'load', initialize);");
 		printWriter.println("    </script>");
+
 		printWriter.println("  </head>");
 		printWriter.println("  <body>");
 		printWriter.println("	<div align=\"center\" class=\"small-font\" style=\"padding-top:5px; padding-bottom:5px\">");
+		printWriter.println("	<button style=\"margin-bottom:5px\" id=\"gapChartButton\">Show Gap over Time chart</button><br>");
+		printWriter.println("	    <div id=\"gapChart\" style=\"width: 900px; height: 500px; position: absolute; left: -10000px;\"></div>");
 		printWriter.println("		<div id=\"toolbar\" class=\"ui-widget-header ui-corner-all\" style=\"margin-bottom:5px\">");
 		printWriter.println("			<button id=\"play\">play</button>");
 		printWriter.println("			<button id=\"stop\">stop</button>");
@@ -654,18 +697,5 @@ public class GarminActivityCompare
 	    double distance = earthRadius * c;
 
 	    return distance;
-	}
-	
-	public void setPrintWriter(PrintWriter printWriter) {
-		this.printWriter = printWriter;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public void setActivityBufferedReaders(BufferedReader[] activityBufferedReaders)
-	{
-		this.activityBufferedReaders = activityBufferedReaders;
 	}
 }
