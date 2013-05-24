@@ -187,6 +187,7 @@ public class GarminActivityCompare
 		htmlContent.add("	  var gap = [ ");
 		int lastTrkPoint = 0; // remember where the last point was to avoid starting all over again or matching the wrong lap if there are several laps
 		int lookAhead = 0; // so it doesn't get tripped up on turnarounds/loops
+		Double kmMarker = 1.0;
 		for (int trkPointA=0; trkPointA<lats[activityOrder[0]].size(); trkPointA++)
 		{
 			double lat = lats[activityOrder[0]].get(trkPointA);
@@ -231,10 +232,24 @@ public class GarminActivityCompare
 					trkPointA+1 < lats[activityOrder[0]].size() ? "," : "];\n",
 					trkPointA > 0 && trkPointA % 10 == 0 ? "\n\t\t" : ""));
 			
-			if (trkPointA == lats[activityOrder[0]].size()-1 || trkPointA % 10 == 0) // first,last and every tenth second
+			double distanceTravelledByA = trkPointA < distancesTravelled[activityOrder[0]].size() ? distancesTravelled[activityOrder[0]].get(trkPointA) : 0.0;
+			boolean reachedKmMarker = distanceTravelledByA >= kmMarker;
+			
+			if (trkPointA == lats[activityOrder[0]].size()-1 || trkPointA % 10 == 0 || reachedKmMarker) // first,last and every tenth second
 			{
-				String minsSeconds = String.format("%.0f",Math.floor(trkPointA/60)) + ":" + String.format("%02d",trkPointA % 60);
-				gapsChartData += ",\n\t['" + minsSeconds + "', " + Double.parseDouble(String.format("%.3f",distance)) + "]";
+				String minsSeconds = "'" + String.format("%.0f",Math.floor(trkPointA/60)) + ":" + String.format("%02d",trkPointA % 60) + "'";
+				double distanceFormatted = Double.parseDouble(String.format("%.3f",distance));
+				//String annotation = trkPointA % 300 == 0 ? minsSeconds : null;
+				String annotation = null;
+				if (reachedKmMarker)
+				{
+					annotation = "'" + kmMarker.intValue() + "km'"; 
+					kmMarker += 1.0;
+				}
+				String annotationText = annotation == null ? null : "'Gap: " + distanceFormatted + "'";
+				gapsChartData += "[" + minsSeconds + ", " + distanceFormatted + ", " + annotation + ", " + annotationText + "]";
+				if (trkPointA != lats[activityOrder[0]].size()-1) // not at the end
+					gapsChartData += ",\n\t";
 			}
 
 		}
@@ -508,8 +523,13 @@ public class GarminActivityCompare
 		printWriter.println("				$('#gapChart').css('position','relative').css('left','0px');");
 		printWriter.println("				if (chart == null)");
 		printWriter.println("			    {");
-		printWriter.println("                   var data = google.visualization.arrayToDataTable([");
-		printWriter.println("                     ['Time', 'Gap']" + gapsChartData);
+		printWriter.println("                   var data = new google.visualization.DataTable();");
+		printWriter.println("                   data.addColumn('string', 'Time');");
+		printWriter.println("                   data.addColumn('number', 'Gap');");
+		printWriter.println("                   data.addColumn({type:'string', role:'annotation'});");
+		printWriter.println("                   data.addColumn({type:'string', role:'annotationText'});");
+		printWriter.println("                   data.addRows([");
+		printWriter.println("                     " + gapsChartData);
 		printWriter.println("                   ]);");
 		printWriter.println("                   var options = {");
 		printWriter.println("                     title: 'Gap (km) over time (mm:ss)', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
