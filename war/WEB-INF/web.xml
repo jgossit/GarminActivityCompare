@@ -11,7 +11,7 @@
   </servlet>
   <servlet-mapping>
     <servlet-name>garminactivitycompare</servlet-name>
-    <url-pattern>/garminactivitycompare</url-pattern>
+    <url-pattern>/garminactivitycompare/*</url-pattern>
   </servlet-mapping>
     
   <!-- Default page to serve -->

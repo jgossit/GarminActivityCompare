@@ -12,15 +12,49 @@
 			margin-bottom:10px;
 			margin-left:10px;
 		}
+		.activitydiv {
+			margin-top:10px;
+			margin-bottom:10px;
+		}
+		button {
+			margin-top:10px;
+		}
 	</style>
 	<script>
 		$(function()
 		{
 			$('#button').button().click(function()
 			{
-				$("#form").submit();
+				var activity1val = $("#file1").val();
+				var activity2val = $("#file2").val();
+				if (activity1val != '' && activity2val != '' && activity1val.toLowerCase().match('.*\.gpx') && activity2val.toLowerCase().match('.*\.gpx'))
+				{
+					$("#form").submit();
+				}
+				else
+				{
+					activity1val = $("#activity1").val();
+					activity2val = $("#activity2").val();
+					if (activity1val != '' && activity2val != '' && activity1val.match('[0-9]{9}') && activity2val.match('[0-9]{9}'))
+					{
+						$("#form").submit();
+					}
+				}
 			});
 			$('#button').css("font-size","12px").css("font-family","verdana");
+			$("#activity1").spinner({ min: 111111111, max: 999999999 });
+			$("#activity1").css("font-size","12px").css("font-family","verdana");
+			$("#activity2").spinner({ min: 111111111, max: 999999999 });
+			$("#activity2").css("font-size","12px").css("font-family","verdana");
+			
+			var hrefVal = window.location.href;
+			if (hrefVal.indexOf("message=") != -1)
+			{
+				var message = hrefVal.slice(hrefVal.indexOf("message=") + 8);
+				if (message.indexOf("&") != -1)
+					message = hrefVal.slice(0, message.indexOf("&"));
+				window.alert(decodeURIComponent(message).replace(/\+/g," "));
+			}
 		});
 	</script>
 </head>
@@ -28,12 +62,19 @@
 	<div align="center">
 		<img src="images/garmin.png"/><br>
 		<form id="form" action="garminactivitycompare" enctype="multipart/form-data" method="post">
-			<label for="file1">Activity #1</label>
+			<label for="file1">Activity File 1</label>
 			<input style="color:black" type="file" size="40" id="file1" name="file1"/><br/>
-			<label for="file2">Activity #2</label>
+			<label for="file2">Activity File 2</label>
 			<input style="color:black" type="file" size="40" id="file2" name="file2"/><br/>
-			<button id="button">Go</button>
+			<label><b>OR</b></label><br/>
+			<div id="activity1div" class="activitydiv">
+				<label for="activity1">Activity 1 #</label>
+				<input id="activity1" name="activity1" /><label> (e.g. 300000001)</label><br/>
+			</div>
+			<label for="activity2">Activity 2 #</label>
+			<input id="activity2" name="activity2"/><label> (e.g. 300000002)</label><br/>
 		</form>
+		<button id="button">Go</button>
 	</div>
 	<div id="result"></div>
 </body>

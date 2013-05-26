@@ -1,12 +1,16 @@
 package jgossit.server;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -24,57 +28,169 @@ public class GarminActivityCompareServlet extends HttpServlet
 	private static final long serialVersionUID = 1L;
 	private static final String REDIRECT_PAGE = "garminactivitycompare.html";
 	private static final String ACCEPT_EXTENSION = ".gpx";
+	private static final Pattern activityUrlPattern = Pattern.compile(".*garminactivitycompare/(\\d+)/(\\d+).*");
 	
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException
 	{
-		boolean isMultipart = ServletFileUpload.isMultipartContent(req);
-		if (!isMultipart)
-			resp.sendRedirect(REDIRECT_PAGE);
+		@SuppressWarnings("unchecked")
+		ArrayList<String>[] activityContents = new ArrayList[2];
+		StringBuffer title = new StringBuffer();
+		String redirectUrl = req.getRequestURI().replaceFirst("garminactivitycompare.*", REDIRECT_PAGE);
 		
-		ServletFileUpload upload = new ServletFileUpload();
-		try
+		Matcher matcher = activityUrlPattern.matcher(req.getRequestURI());
+		if (matcher.matches())
 		{
-			@SuppressWarnings("unchecked")
-			ArrayList<String>[] activityContents = new ArrayList[2];
-			String title = null;
-			FileItemIterator iterator = upload.getItemIterator(req);
-			int count = 0;
-			while (iterator.hasNext())
+			String activityStr = null;
+			try
 			{
-				FileItemStream item = iterator.next();
-				if (!item.getName().endsWith(ACCEPT_EXTENSION))
-					resp.sendRedirect(REDIRECT_PAGE);
-				
-		        if (title == null)
-		        {
-		        	File uploadFile = new File(item.getName());
-		        	title = uploadFile.getName().substring(0,uploadFile.getName().length() - ACCEPT_EXTENSION.length());
-		        }
-		        InputStream inputStream = item.openStream();
-		        ArrayList<String> activityContent = new ArrayList<String>();
-		        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-		        String line = null;
-		        while ((line = br.readLine()) != null)
-		        	activityContent.add(line);
-		        activityContents[count++] = activityContent;
-		        br.close();
+				for (int i=0;i<2;i++)
+				{
+					activityStr = matcher.group(i+1);
+					if (activityStr.length() != 9)
+					{
+						resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Invalid Activity # format, it should be 9 digits long","ASCII"));
+						return;
+					}
+					int activity = Integer.parseInt(activityStr);
+					try
+					{
+						activityContents[i] = readActivity(activity, title);
+					}
+					catch (Exception e)
+					{
+						resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error accessing Activity #" + activity + ", it's privacy may not be set to 'Everyone'","ASCII"));
+						return;
+					}
+				}
+			}
+			catch (NumberFormatException e)
+			{
+				resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Invalid Activity # format '" + activityStr + "'","ASCII"));
+				return;
+			}
+		}
+		else
+		{
+			boolean isMultipart = ServletFileUpload.isMultipartContent(req);
+			if (!isMultipart)
+			{
+				resp.sendRedirect(redirectUrl);
+				return;
 			}
 			
-			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title, activityContents);
-			garminActivityCompare.go();
+			ServletFileUpload upload = new ServletFileUpload();
+			try
+			{
+				FileItemIterator iterator = upload.getItemIterator(req);
+				int count = 0;
+				while (iterator.hasNext())
+				{
+					FileItemStream item = iterator.next();
+					if (!item.isFormField()) // file input
+					{
+						if (item.getName().equals("")) // no activity file provided
+							continue;
+						else if (!item.getName().toLowerCase().endsWith(ACCEPT_EXTENSION))
+						{
+							resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Invalid Activity file extension, only .gpx files are accepted","ASCII"));
+							return;
+						}
+						
+				        InputStream inputStream = item.openStream();
+				        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+				        activityContents[count++] = readActivity(br, title);
+					}
+					else
+					{
+						InputStream inputStream = item.openStream();
+						BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+						String activityStr = br.readLine();
+						if (activityStr != null && activityStr.length() == 9) // activity numbers are 9 digits
+						{
+							int activity = Integer.parseInt(activityStr);
+							try
+							{
+								activityContents[count++] = readActivity(activity, title);
+							}
+							catch (Exception e)
+							{
+								resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error accessing Activity #" + activity + ", it's privacy may not be set to 'Everyone'","ASCII"));
+								return;
+							}
+						}
+						br.close();
+					}
+					
+					if (count == 2)
+						break;
+				}
+				if (count != 2)
+				{
+					resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Two Acitivity files or #'s are required, but only " + count + " was provided","ASCII"));
+					return;
+				}
+			}
+			catch (FileUploadException e)
+			{
+				resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error in file upload - " + e.getMessage(),"ASCII"));
+				return;
+			}
+			
 		}
-		catch (FileUploadException e)
+
+		try
 		{
-			resp.sendRedirect(REDIRECT_PAGE);
+			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title.toString(), activityContents);
+			garminActivityCompare.go();
 		}
 		catch (ParseException e)
 		{
-			resp.sendRedirect(REDIRECT_PAGE);
+			resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error parsing Activity - " + e.getMessage(),"ASCII"));
+			return;
 		}
 	}
 	
+	private ArrayList<String> readActivity(int activityNumber, StringBuffer title) throws Exception
+	{
+		String address = "http://connect.garmin.com/activity/proxy/activity-service-1.1/gpx/activity/" + activityNumber + "?full=true";
+		URL url = new URL(address);
+		HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+		urlConnection.setUseCaches(false);
+		urlConnection.setDefaultUseCaches(false);
+		urlConnection.addRequestProperty("Cache-Control", "no-cache,max-age=0");
+		urlConnection.addRequestProperty("Pragma", "no-cache");
+		if (urlConnection.getResponseCode() != 200)
+		{
+			throw new Exception("Response code " + urlConnection.getResponseCode());
+		}
+		BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+		ArrayList<String> activityContent = readActivity(br, title);
+		urlConnection.disconnect();
+		return activityContent;
+	}
+
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException
 	{
 		doPost(req, resp);
+	}
+	
+	private ArrayList<String> readActivity(BufferedReader br, StringBuffer title)
+	{
+		ArrayList<String> activityContent = new ArrayList<String>();
+		String line = null;
+        try
+        {
+			while ((line = br.readLine()) != null)
+			{
+				if (title.length() == 0 && line.contains("<name>"))
+					title.append(line.substring(line.indexOf("<name>")+6, line.indexOf("</name>")));
+				activityContent.add(line);
+			}
+			br.close();
+		}
+        catch (IOException e)
+        {
+		}
+        return activityContent;
 	}
 }
