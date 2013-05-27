@@ -39,8 +39,8 @@ The order of the two files is not important, the slower time will be (A) and it'
 
 Servlet:
 
-The war directory contains a WEB-INF/web.xml for deploying the servlet to your app server and the ui files for obtaining the activity information to pass to the servlet and displaying the response.
-The ui allows either the exported activity .gpx files to be uploaded, or the activity numbers to be specified and the file content downloaded remotely using the garmin connection REST api - this requires that the activities privacy setting is set to 'Everyone'.
+The war directory contains a WEB-INF/web.xml for deploying the servlet to your app server and the ui files for obtaining the activity information to pass to the servlet and displaying the response.<br>
+The ui allows either the exported activity .gpx files to be uploaded, or the activity numbers to be specified and the file content downloaded remotely using the garmin connection REST api - this requires that the activities privacy setting is set to 'Everyone'.<br>
 Additionally, the activity numbers can be specified as RESTful parameters to the servlet as /garminactivitycompare/111111111/222222222, where /garminactivitycompare is the servlet URL and 111111111 and 222222222 are the 9-digit activity numbers.
 
 
