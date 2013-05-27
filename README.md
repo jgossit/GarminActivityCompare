@@ -12,6 +12,8 @@ There are controls for<br>
 - Slider showing the Activity progress, which can also be used to scan through/check individual points<br>
 - Slider to control the playback speed
 
+There is also a Gap over Time chart to display how the gap between the two grew/shrink over the course of the activity.
+
 The typical use case is for comparing two runners competing in the same race or for a single runner competing the same race/route on multiple occasions.
 
 
@@ -37,13 +39,15 @@ The order of the two files is not important, the slower time will be (A) and it'
 
 Servlet:
 
-The war directory contains a WEB-INF/web.xml for deploying the servlet to your app server and the ui files for obtaining the activity files to pass to the servlet and displaying the response.
+The war directory contains a WEB-INF/web.xml for deploying the servlet to your app server and the ui files for obtaining the activity information to pass to the servlet and displaying the response.
+The ui allows either the exported activity .gpx files to be uploaded, or the activity numbers to be specified and the file content downloaded remotely using the garmin connection REST api - this requires that the activities privacy setting is set to 'Everyone'.
+Additionally, the activity numbers can be specified as RESTful parameters to the servlet as /garminactivitycompare/111111111/222222222, where /garminactivitycompare is the servlet URL and 111111111 and 222222222 are the 9-digit activity numbers.
 
 
 Demo
 ====
 
-Available here <a target="_blank" href="http://jgossit.appspot.com/garminactivitycompare.html">jgossit.appspot.com/garminactivitycompare.html</a>
+Available here <a target="_blank" href="http://jgossit.appspot.com/garminactivitycompare">jgossit.appspot.com/garminactivitycompare</a>
 <p align="center" >
   <img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/web form.png">
 </p>
