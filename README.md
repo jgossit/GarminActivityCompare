@@ -12,7 +12,7 @@ There are controls for<br>
 - Slider showing the Activity progress, which can also be used to scan through/check individual points<br>
 - Slider to control the playback speed
 
-There is also a Gap over Time chart to display how the gap between the two grew/shrink over the course of the activity.
+There is also a Gap over Time chart, to display how the gap between the two grew/shrink over the course of the activity, and a Pace Difference chart to show the pace differences at the same distance (part) of the course.
 
 The typical use case is for comparing two runners competing in the same race or for a single runner competing the same race/route on multiple occasions.
 
@@ -67,6 +67,11 @@ An example is available in \example or by clicking an image below. (Note: you wi
 <p align="center" >
   <a href="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km.html"><img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km-2.png"></a>
   <br>Showing the Gap over Time chart
+</p>
+<br>
+<p align="center" >
+  <a href="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km.html"><img src="https://raw.github.com/jgossit/GarminActivityCompare/master/example/2013-04-28_Sri_Chinmoy_Princes_Park_10km-3.png"></a>
+  <br>Showing the Pace Difference chart
 </p>
 
 
