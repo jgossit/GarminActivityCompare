@@ -1,6 +1,6 @@
 /**
  * @author Jason Gossit
- * @version 1.1, 22/05/13
+ * @version 1.2, 02/06/13
  */
 package jgossit;
 
@@ -23,6 +23,7 @@ public class GarminActivityCompare
 	PrintWriter printWriter;
 	String title;
 	String gapsChartData = "";
+	String paceDifferenceChartData = "";
 	String activityDir = null;
 	String[] activityFilenames = { "", "" };
 	String[] activityNames = { "", "" };
@@ -136,6 +137,7 @@ public class GarminActivityCompare
 			title = outputFile.getName().substring(0,outputFile.getName().length()-5);
 		}
 		
+		ArrayList<Double>[] paceAtIntervals = new ArrayList[activityOrder.length];
 		for(int i=0;i<activityOrder.length;i++)
 		{
 			htmlContent.add("	  var lats" + (i+1) + " = [ ");
@@ -167,6 +169,9 @@ public class GarminActivityCompare
 						j+1 < lats[activityOrder[i]].size() ? "," : "];\n",
 						j % 10 == 0 ? "\n\t\t" : ""));
 			}
+			
+			double nextInterval = 0.1; // 100 metres
+			paceAtIntervals[i] = new ArrayList<Double>();
 			htmlContent.add("	  var pace" + (i+1) + " = [ 0, ");
 			for (int j=0;j<distancesTravelled[activityOrder[i]].size();j++)
 			{
@@ -179,7 +184,34 @@ public class GarminActivityCompare
 						pace,
 						j+1 < distancesTravelled[activityOrder[i]].size() ? "," : "];\n",
 						j > 0 && j % 10 == 0 ? "\n\t\t" : ""));
+				
+				if (distanceNow >= nextInterval || j == distancesTravelled[activityOrder[i]].size()-1)
+				{
+					paceAtIntervals[i].add(pace);
+					nextInterval += 0.1;
+				}
 			}
+		}
+		
+		while (paceAtIntervals[0].size() != paceAtIntervals[1].size())
+		{
+			if (paceAtIntervals[0].size() < paceAtIntervals[1].size())
+				paceAtIntervals[0].add(paceAtIntervals[0].get(paceAtIntervals[0].size()-1));
+			else
+				paceAtIntervals[1].add(paceAtIntervals[1].get(paceAtIntervals[1].size()-1));
+		}
+		double distanceInterval = 0.1; // 100 metres
+		for (int i=0;i<paceAtIntervals[0].size();i++)
+		{
+			paceDifferenceChartData += String.format("['%.3f', %.1f, %s, %.1f, %s]",
+					distanceInterval,
+					paceAtIntervals[0].get(i),
+					(paceAtIntervals[0].get(i) >= paceAtIntervals[1].get(i)),
+					paceAtIntervals[1].get(i),
+					(paceAtIntervals[1].get(i) >= paceAtIntervals[0].get(i)));
+			distanceInterval += 0.1;
+			if (i != paceAtIntervals[0].size()-1) // not at the end
+				paceDifferenceChartData += ",\n\t";
 		}
 		
 		// instead of comparing difference in A and B distance travelled at the same point in time, as the devices may vary,
@@ -486,7 +518,8 @@ public class GarminActivityCompare
 		printWriter.println("	  var neutral = '&#x25AC;';");
 		printWriter.println("	  var downArrow = '<font color=\"red\">&#x25BC;</font>';");
 		printWriter.println("	  var lastGap = 0;");
-		printWriter.println("	  var chart = null;");
+		printWriter.println("	  var gapOverTimeChart = null;");
+		printWriter.println("	  var paceDifferenceChart = null;");
 	}
 	
 	private void printFooter()
@@ -521,7 +554,7 @@ public class GarminActivityCompare
 		printWriter.println("			{");
 		printWriter.println("				$(this).button('option','label','Hide Gap over Time chart');");
 		printWriter.println("				$('#gapChart').css('position','relative').css('left','0px');");
-		printWriter.println("				if (chart == null)");
+		printWriter.println("				if (gapOverTimeChart == null)");
 		printWriter.println("			    {");
 		printWriter.println("                   var data = new google.visualization.DataTable();");
 		printWriter.println("                   data.addColumn('string', 'Time');");
@@ -535,14 +568,46 @@ public class GarminActivityCompare
 		printWriter.println("                     title: 'Gap (km) over time (mm:ss)', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
 		printWriter.println("                     legend:{position: 'none'}, vAxis:{title: 'Gap'}");
 		printWriter.println("                   };");
-		printWriter.println("                   chart = new google.visualization.LineChart(document.getElementById('gapChart'));");
-		printWriter.println("                   chart.draw(data, options);");
+		printWriter.println("                   gapOverTimeChart = new google.visualization.LineChart(document.getElementById('gapChart'));");
+		printWriter.println("                   gapOverTimeChart.draw(data, options);");
 		printWriter.println("			    }");
 		printWriter.println("			}");
 		printWriter.println("			else");
 		printWriter.println("			{");
 		printWriter.println("				$(this).button('option','label','Show Gap over Time chart');");
 		printWriter.println("				$('#gapChart').css('position','absolute').css('left','-100000px');");
+		printWriter.println("			}");
+		printWriter.println("		});");
+		printWriter.println("		$('#paceDifferenceChartButton').button().click(function()");
+		printWriter.println("		{");
+		printWriter.println("			var label = $(this).button('option','label');");
+		printWriter.println("			if (label == 'Show Pace Difference chart')");
+		printWriter.println("			{");
+		printWriter.println("				$(this).button('option','label','Hide Pace Difference chart');");
+		printWriter.println("				$('#paceDifferenceChart').css('position','relative').css('left','0px');");
+		printWriter.println("				if (paceDifferenceChart == null)");
+		printWriter.println("			    {");
+		printWriter.println("                   var data = new google.visualization.DataTable();");
+		printWriter.println("                   data.addColumn('string', 'Distance');");
+		printWriter.println("                   data.addColumn('number', 'A');");
+		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
+		printWriter.println("                   data.addColumn('number', 'B');");
+		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
+		printWriter.println("                   data.addRows([");
+		printWriter.println("                     " + paceDifferenceChartData);
+		printWriter.println("                   ]);");
+		printWriter.println("                   var options = {");
+		printWriter.println("                     title: 'Pace Difference', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
+		printWriter.println("                     vAxis:{title: 'Pace'}");
+		printWriter.println("                   };");
+		printWriter.println("                   paceDifferenceChart = new google.visualization.LineChart(document.getElementById('paceDifferenceChart'));");
+		printWriter.println("                   paceDifferenceChart.draw(data, options);");
+		printWriter.println("			    }");
+		printWriter.println("			}");
+		printWriter.println("			else");
+		printWriter.println("			{");
+		printWriter.println("				$(this).button('option','label','Show Pace Difference chart');");
+		printWriter.println("				$('#paceDifferenceChart').css('position','absolute').css('left','-100000px');");
 		printWriter.println("			}");
 		printWriter.println("		});");
 		printWriter.println("	  }");
@@ -688,7 +753,9 @@ public class GarminActivityCompare
 		printWriter.println("  <body>");
 		printWriter.println("	<div align=\"center\" class=\"small-font\" style=\"padding-top:5px; padding-bottom:5px\">");
 		printWriter.println("	<button style=\"margin-bottom:5px\" id=\"gapChartButton\">Show Gap over Time chart</button><br>");
+		printWriter.println("	<button style=\"margin-bottom:5px\" id=\"paceDifferenceChartButton\">Show Pace Difference chart</button><br>");
 		printWriter.println("	    <div id=\"gapChart\" style=\"width: 900px; height: 500px; position: absolute; left: -10000px;\"></div>");
+		printWriter.println("	    <div id=\"paceDifferenceChart\" style=\"width: 1400px; height: 500px; position: absolute; left: -10000px;\"></div>");
 		printWriter.println("		<div id=\"toolbar\" class=\"ui-widget-header ui-corner-all\" style=\"margin-bottom:5px\">");
 		printWriter.println("			<button id=\"play\">play</button>");
 		printWriter.println("			<button id=\"stop\">stop</button>");
