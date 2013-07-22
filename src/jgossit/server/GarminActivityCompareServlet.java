@@ -156,6 +156,7 @@ public class GarminActivityCompareServlet extends HttpServlet
 
 		try
 		{
+			resp.setContentType("text/html; charset=UTF-8");
 			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title.toString(), activityContents, activityLabels);
 			garminActivityCompare.go();
 		}
