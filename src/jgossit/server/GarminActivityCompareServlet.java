@@ -29,23 +29,26 @@ public class GarminActivityCompareServlet extends HttpServlet
 	private static final String REDIRECT_PAGE = "garminactivitycompare.html";
 	private static final String ACCEPT_EXTENSION = ".gpx";
 	private static final Pattern activityUrlPattern = Pattern.compile(".*garminactivitycompare/(\\d+)/(\\d+).*");
+	private static final Pattern activityUrlNamedPattern = Pattern.compile(".*garminactivitycompare/(\\d+)/(\\d+)/(.*)/(.*)");
 	
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException
 	{
 		@SuppressWarnings("unchecked")
 		ArrayList<String>[] activityContents = new ArrayList[2];
+		String[] activityLabels = { null, null };
 		StringBuffer title = new StringBuffer();
 		String redirectUrl = req.getRequestURI().replaceFirst("garminactivitycompare.*", REDIRECT_PAGE);
 		
 		Matcher matcher = activityUrlPattern.matcher(req.getRequestURI());
-		if (matcher.matches())
+		Matcher namedMatcher = activityUrlNamedPattern.matcher(req.getRequestURI());
+		if (matcher.matches() || namedMatcher.matches())
 		{
 			String activityStr = null;
 			try
 			{
 				for (int i=0;i<2;i++)
 				{
-					activityStr = matcher.group(i+1);
+					activityStr = matcher.matches() ? matcher.group(i+1) : namedMatcher.group(i+1);
 					if (activityStr.length() != 9)
 					{
 						resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Invalid Activity # format, it should be 9 digits long","ASCII"));
@@ -61,6 +64,13 @@ public class GarminActivityCompareServlet extends HttpServlet
 						resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error accessing Activity #" + activity + ", it's privacy may not be set to 'Everyone'","ASCII"));
 						return;
 					}
+				}
+				if (namedMatcher.matches())
+				{
+					activityLabels[0] = namedMatcher.group(3);
+					activityLabels[1] = namedMatcher.group(4);
+					if (activityLabels[1].indexOf("/") != -1)
+						activityLabels[1] = activityLabels[1].substring(0, activityLabels[1].indexOf("/"));
 				}
 			}
 			catch (NumberFormatException e)
@@ -82,7 +92,8 @@ public class GarminActivityCompareServlet extends HttpServlet
 			try
 			{
 				FileItemIterator iterator = upload.getItemIterator(req);
-				int count = 0;
+				int activityCount = 0;
+				int activityNameCount = 0;
 				while (iterator.hasNext())
 				{
 					FileItemStream item = iterator.next();
@@ -98,35 +109,40 @@ public class GarminActivityCompareServlet extends HttpServlet
 						
 				        InputStream inputStream = item.openStream();
 				        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-				        activityContents[count++] = readActivity(br, title);
+				        activityContents[activityCount++] = readActivity(br, title);
 					}
 					else
 					{
 						InputStream inputStream = item.openStream();
 						BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 						String activityStr = br.readLine();
-						if (activityStr != null && activityStr.length() == 9) // activity numbers are 9 digits
+						if (item.getFieldName().endsWith("name")) // activity name
 						{
-							int activity = Integer.parseInt(activityStr);
-							try
+							if (activityStr != null && activityStr.length() > 0)
+								activityLabels[activityNameCount++] = activityStr;
+						}
+						else // activity number
+						{
+							if (activityStr != null && activityStr.length() == 9) // activity numbers are 9 digits
 							{
-								activityContents[count++] = readActivity(activity, title);
-							}
-							catch (Exception e)
-							{
-								resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error accessing Activity #" + activity + ", it's privacy may not be set to 'Everyone'","ASCII"));
-								return;
+								int activity = Integer.parseInt(activityStr);
+								try
+								{
+									activityContents[activityCount++] = readActivity(activity, title);
+								}
+								catch (Exception e)
+								{
+									resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Error accessing Activity #" + activity + ", it's privacy may not be set to 'Everyone'","ASCII"));
+									return;
+								}
 							}
 						}
 						br.close();
 					}
-					
-					if (count == 2)
-						break;
 				}
-				if (count != 2)
+				if (activityCount != 2)
 				{
-					resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Two Acitivity files or #'s are required, but only " + count + " was provided","ASCII"));
+					resp.sendRedirect(redirectUrl + "?message=" + URLEncoder.encode("Two Acitivity files or #'s are required, but only " + activityCount + " was provided","ASCII"));
 					return;
 				}
 			}
@@ -140,7 +156,7 @@ public class GarminActivityCompareServlet extends HttpServlet
 
 		try
 		{
-			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title.toString(), activityContents);
+			GarminActivityCompare garminActivityCompare = new GarminActivityCompare(resp.getWriter(), title.toString(), activityContents, activityLabels);
 			garminActivityCompare.go();
 		}
 		catch (ParseException e)

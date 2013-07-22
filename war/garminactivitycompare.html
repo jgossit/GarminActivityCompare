@@ -5,7 +5,7 @@
 	<script type="text/javascript" src="jquery-1.9.1.js"></script>
 	<script type="text/javascript" src="jquery-ui.js"></script>
 	<style>
-		input,label,button {
+		input,label,button,#activitydiv,.activityname {
 			color:white;
 			font-family:verdana;
 			font-size:12px;
@@ -15,6 +15,9 @@
 		.activitydiv {
 			margin-top:10px;
 			margin-bottom:10px;
+		}
+		.activityname {
+			color:black;
 		}
 		button {
 			margin-top:10px;
@@ -38,6 +41,10 @@
 					if (activity1val != '' && activity2val != '' && activity1val.match('[0-9]{9}') && activity2val.match('[0-9]{9}'))
 					{
 						$("#form").submit();
+					}
+					else
+					{
+						window.alert("Two .gpx activity files or 9-digit activity numbers need to be entered"); 		
 					}
 				}
 			});
@@ -71,8 +78,14 @@
 				<label for="activity1">Activity 1 #</label>
 				<input id="activity1" name="activity1" /><br/>
 			</div>
-			<label for="activity2">Activity 2 #</label>
-			<input id="activity2" name="activity2"/><br/>
+			<div id="activity2div" class="activitydiv">
+				<label for="activity2">Activity 2 #</label>
+				<input id="activity2" name="activity2"/><br/>
+			</div>
+			<label for="activity1name">(Activity 1 Name)</label>
+			<input class="activityname" id="activity1name" type="text" name="activity1name"/><br/>
+			<label for="activity2name">(Activity 2 Name)</label>
+			<input class="activityname" id="activity2name" type="text" name="activity2name"/><br/>
 		</form>
 		<button id="button">Go</button>
 	</div>

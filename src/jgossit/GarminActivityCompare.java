@@ -27,6 +27,7 @@ public class GarminActivityCompare
 	String activityDir = null;
 	String[] activityFilenames = { "", "" };
 	String[] activityNames = { "", "" };
+	String[] activityLabels = { "A", "B" };
 	String[] activityTimes = { "", "" };
 	@SuppressWarnings("unchecked")
 	ArrayList<String>[] activityContents = new ArrayList[2];
@@ -53,6 +54,17 @@ public class GarminActivityCompare
 		this.activityContents = activityContents;
 	}
 
+	public GarminActivityCompare(PrintWriter printWriter, String title,	ArrayList<String>[] activityContents, String[] activityLabels)
+	{
+		this.printWriter = printWriter;
+		this.title = title;
+		this.activityContents = activityContents;
+		if (activityLabels != null && activityLabels.length == 2 && activityLabels[0] != null && activityLabels[1] != null && activityLabels[0].length() > 0 && activityLabels[1].length() > 0)
+		{
+			this.activityLabels[0] = activityLabels[0] + " (A)";
+			this.activityLabels[1] = activityLabels[1] + " (B)";
+		}
+	}
 
 	public static void main(String[] args) throws IOException, ParseException
 	{
@@ -520,6 +532,8 @@ public class GarminActivityCompare
 		printWriter.println("	  var lastGap = 0;");
 		printWriter.println("	  var gapOverTimeChart = null;");
 		printWriter.println("	  var paceDifferenceChart = null;");
+		printWriter.println("	  var activityA = '" + activityLabels[0] + "';");
+		printWriter.println("	  var activityB = '" + activityLabels[1] + "';");
 	}
 	
 	private void printFooter()
@@ -589,9 +603,9 @@ public class GarminActivityCompare
 		printWriter.println("			    {");
 		printWriter.println("                   var data = new google.visualization.DataTable();");
 		printWriter.println("                   data.addColumn('string', 'Distance');");
-		printWriter.println("                   data.addColumn('number', 'A');");
+		printWriter.println("                   data.addColumn('number', activityA);");
 		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
-		printWriter.println("                   data.addColumn('number', 'B');");
+		printWriter.println("                   data.addColumn('number', activityB);");
 		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
 		printWriter.println("                   data.addRows([");
 		printWriter.println("                     " + paceDifferenceChartData);
@@ -665,7 +679,7 @@ public class GarminActivityCompare
 		printWriter.println("		marker2 = new google.maps.Marker({anchorPoint:new google.maps.Point(0,0),map:map,position:coords2.getAt(position2),clickable:false,zIndex:1,icon:'" + markerBImageData + "'});");
 		printWriter.println("		infoBox = new InfoBox({closeBoxURL:\"\",enableEventPropagation:false,alignBottom:true,maxWidth:0,pixelOffset: new google.maps.Size(10, -40),boxStyle:{border: '1px solid black',opacity: 0.8,background:'white',whiteSpace:'nowrap',padding:'5px'}});");
 		printWriter.println("		infoBox.open(map, marker1);");
-		printWriter.println("		infoBox.setContent('A distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>B distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>Gap 0.000km');");
+		printWriter.println("		infoBox.setContent(activityA + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>' + activityB + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>Gap 0.000km');");
 		printWriter.println("	  }");
 		printWriter.println("	  ");
 		printWriter.println("	  function slide(position)");
@@ -682,7 +696,7 @@ public class GarminActivityCompare
 		printWriter.println("		panMap(coords1.getAt(position1));");
 		printWriter.println("		updateDistance = 0;");
 		printWriter.println("		lastGap = gap[position-1];");
-		printWriter.println("		infoBox.setContent('A distance ' + distance1[position1-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[position1] + 'kmh<br>B distance ' + distance2[position2-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[position2] + 'kmh<br>Gap ' + (position1 == 0 ? '0.000' : gap[position1-1]) + 'km ' + gapChangeText);");
+		printWriter.println("		infoBox.setContent(activityA + ' distance ' + distance1[position1-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[position1] + 'kmh<br>' + activityB + ' distance ' + distance2[position2-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[position2] + 'kmh<br>Gap ' + (position1 == 0 ? '0.000' : gap[position1-1]) + 'km ' + gapChangeText);");
 		printWriter.println("	  }");
 		printWriter.println("	  ");
 		printWriter.println("	  function panMap(coord)");
@@ -732,7 +746,7 @@ public class GarminActivityCompare
 		printWriter.println("				else if (gap[pos-1] < lastGap)");
 		printWriter.println("					gapChangeText = downArrow;");
 		printWriter.println("				lastGap = gap[pos-1];");
-		printWriter.println("				infoBox.setContent('A distance ' + distance1[pos-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[pos] + 'kmh<br>B distance ' + distance2[pos-1 < distance2.length ? pos-1 : distance2.length-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[pos < pace2.length ? pos : pace2.length-1] + 'kmh<br>Gap ' + gap[pos-1] + 'km ' + gapChangeText);");
+		printWriter.println("				infoBox.setContent(activityA + ' distance ' + distance1[pos-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[pos] + 'kmh<br>' + activityB + ' distance ' + distance2[pos-1 < distance2.length ? pos-1 : distance2.length-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[pos < pace2.length ? pos : pace2.length-1] + 'kmh<br>Gap ' + gap[pos-1] + 'km ' + gapChangeText);");
 		printWriter.println("			}");
 		printWriter.println("			position1 = pos+1;");
 		printWriter.println("			$( \"#slider\" ).slider( \"option\", \"value\", position1 );");
