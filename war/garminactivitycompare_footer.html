@@ -1,0 +1,245 @@
+      function initialize()
+	  {
+        coords1 = new google.maps.MVCArray();
+        for (i=0; i<lats1.length; i++)
+        {
+        	coords1.push(new google.maps.LatLng(lats1[i], lons1[i]));
+        }
+        coords2 = new google.maps.MVCArray();
+        for (i=0; i<lats2.length; i++)
+        {
+        	coords2.push(new google.maps.LatLng(lats2[i], lons2[i]));
+        }
+        var mapOptions = {
+          center: coords1.getAt(position1),
+          zoom: 15,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(document.getElementById("map-canvas"),
+            mapOptions);
+		var polyline = new google.maps.Polyline({path:coords1});
+		polyline.setMap(map);
+
+		reset();
+		$('#gapChartButton').button().click(function()
+		{
+			var label = $(this).button('option','label');
+			if (label == 'Show Gap over Time chart')
+			{
+				$(this).button('option','label','Hide Gap over Time chart');
+				$('#gapChart').css('position','relative').css('left','0px');
+				if (gapOverTimeChart == null)
+			    {
+                   var data = new google.visualization.DataTable();
+                   data.addColumn('string', 'Time');
+                   data.addColumn('number', 'Gap');
+                   data.addColumn({type:'string', role:'annotation'});
+                   data.addColumn({type:'string', role:'annotationText'});
+                   data.addRows([
+                     %GAPSCHARTDATA%
+                   ]);
+                   var options = {
+                     title: 'Gap (km) over time (mm:ss)', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},
+                     legend:{position: 'none'}, vAxis:{title: 'Gap'}
+                   };
+                   gapOverTimeChart = new google.visualization.LineChart(document.getElementById('gapChart'));
+                   gapOverTimeChart.draw(data, options);
+			    }
+			}
+			else
+			{
+				$(this).button('option','label','Show Gap over Time chart');
+				$('#gapChart').css('position','absolute').css('left','-100000px');
+			}
+		});
+		$('#paceDifferenceChartButton').button().click(function()
+		{
+			var label = $(this).button('option','label');
+			if (label == 'Show Pace Difference chart')
+			{
+				$(this).button('option','label','Hide Pace Difference chart');
+				$('#paceDifferenceChart').css('position','relative').css('left','0px');
+				if (paceDifferenceChart == null)
+			    {
+                   var data = new google.visualization.DataTable();
+                   data.addColumn('string', 'Distance');
+                   data.addColumn('number', activityA);
+                   data.addColumn({type:'boolean', role:'emphasis'});
+                   data.addColumn('number', activityB);
+                   data.addColumn({type:'boolean', role:'emphasis'});
+                   data.addRows([
+                     %PACEDIFFCHARTDATA%
+                   ]);
+                   var options = {
+                     title: 'Pace Difference', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},
+                     vAxis:{title: 'Pace'}
+                   };
+                   paceDifferenceChart = new google.visualization.LineChart(document.getElementById('paceDifferenceChart'));
+                   paceDifferenceChart.draw(data, options);
+			    }
+			}
+			else
+			{
+				$(this).button('option','label','Show Pace Difference chart');
+				$('#paceDifferenceChart').css('position','absolute').css('left','-100000px');
+			}
+		});
+	  }
+	  
+	  function play()
+	  {
+		if (position1+1 == coords1.getLength()) //finished
+		{
+			position1 = 0;
+			position2 = 0;
+		}
+		paused = false;
+		resume = true;
+		setTimeout(function() {
+			move(position1, marker1, coords1, distance1);
+		}, 0);
+		setTimeout(function() {
+			move(position2, marker2, coords2, distance2);
+		}, 0);
+	  }
+	  function playFromSlide()
+	  {
+		if (resume)
+		  play();
+	  }
+	  
+	  function pause()
+	  {
+		paused = true;
+	  }
+	  function pauseFromSlide()
+	  {
+		if (paused)
+		  resume = false;
+		pause();
+	  }
+	  
+	  function stop()
+	  {
+		paused = false;
+		resume = false;
+		infoBox.close();
+		marker1.setMap(null);
+		marker2.setMap(null);
+		position1 = 0;
+		position2 = 0;
+		lastGap = 0;
+		$( "#slider" ).slider( "option", "value", position1 );
+		reset();
+	  }
+	  
+	  function reset()
+	  {
+		marker1 = new google.maps.Marker({anchorPoint:new google.maps.Point(0,0),map:map,position:coords1.getAt(position1),clickable:false,zIndex:0,icon:'%MARKERA%'});
+		marker2 = new google.maps.Marker({anchorPoint:new google.maps.Point(0,0),map:map,position:coords2.getAt(position2),clickable:false,zIndex:1,icon:'%MARKERB%'});
+		infoBox = new InfoBox({closeBoxURL:"",enableEventPropagation:false,alignBottom:true,maxWidth:0,pixelOffset: new google.maps.Size(10, -40),boxStyle:{border: '1px solid black',opacity: 0.8,background:'white',whiteSpace:'nowrap',padding:'5px'}});
+		infoBox.open(map, marker1);
+		infoBox.setContent(activityA + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>' + activityB + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>Gap 0.000km');
+	  }
+	  
+	  function slide(position)
+	  {
+		var gapChangeText = neutral;
+		if (gap[position-1] > gap[position1-1])
+			gapChangeText = upArrow;
+		else if (gap[position-1] < gap[position1-1])
+			gapChangeText = downArrow;
+		position1 = position;
+		marker1.setPosition(coords1.getAt(position1));
+		position2 = position < coords2.getLength() ? position : coords2.getLength()-1;
+		marker2.setPosition(coords2.getAt(position2));
+		panMap(coords1.getAt(position1));
+		updateDistance = 0;
+		lastGap = gap[position-1];
+		infoBox.setContent(activityA + ' distance ' + distance1[position1-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[position1] + 'kmh<br>' + activityB + ' distance ' + distance2[position2-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[position2] + 'kmh<br>Gap ' + (position1 == 0 ? '0.000' : gap[position1-1]) + 'km ' + gapChangeText);
+	  }
+	  
+	  function panMap(coord)
+	  {
+		var mapBounds = map.getBounds();
+		if (mapBounds != null && coord != null)
+		{
+			var ne = mapBounds.getNorthEast();
+			var sw = mapBounds.getSouthWest();
+			var mapCanvasProjection = infoBox.getProjection();
+			var coordPixelPoint = mapCanvasProjection.fromLatLngToContainerPixel(coord);
+			var nePixelPoint = mapCanvasProjection.fromLatLngToContainerPixel(ne);
+			if (coordPixelPoint.x+infoBoxClearance > nePixelPoint.x || coordPixelPoint.y-infoBoxClearance < nePixelPoint.y)
+			{
+				map.panTo(coord);
+			}
+			else if ( (coord.lat() < ne.lat() && coord.lat() < sw.lat()) ||
+				 (coord.lat() > ne.lat() && coord.lat() > sw.lat()) ||
+				 (coord.lng() < ne.lng() && coord.lng() < sw.lng()) ||
+				 (coord.lng() > ne.lng() && coord.lng() > sw.lng()) )
+			{
+				map.panTo(coord);
+			}
+		}
+	  }
+	  
+	  function changeSpeed(value)
+	  {
+		speed = value;
+	  }
+
+	function move(pos, mark, coords, distance)
+	{
+		if (paused)
+			return;
+		panMap(coords.getAt(pos+1));
+		mark.setPosition(coords.getAt(pos));
+		if (mark == marker1)
+		{
+			updateDistance++;
+			if (updateDistance == 20)
+			{
+				updateDistance = 0;
+				var gapChangeText = neutral;
+				if (gap[pos-1] > lastGap)
+					gapChangeText = upArrow;
+				else if (gap[pos-1] < lastGap)
+					gapChangeText = downArrow;
+				lastGap = gap[pos-1];
+				infoBox.setContent(activityA + ' distance ' + distance1[pos-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[pos] + 'kmh<br>' + activityB + ' distance ' + distance2[pos-1 < distance2.length ? pos-1 : distance2.length-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[pos < pace2.length ? pos : pace2.length-1] + 'kmh<br>Gap ' + gap[pos-1] + 'km ' + gapChangeText);
+			}
+			position1 = pos+1;
+			$( "#slider" ).slider( "option", "value", position1 );
+		}
+		else
+			position2 = pos+1;
+		pos++;
+		if (pos+1 < coords.getLength())
+			setTimeout(function() {
+				move(pos, mark, coords, distance);
+			}, 1000/speed);
+	}
+
+      google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+
+  </head>
+  <body>
+	<div align="center" class="small-font" style="padding-top:5px; padding-bottom:5px">
+	<button style="margin-bottom:5px" id="gapChartButton">Show Gap over Time chart</button><br>
+	<button style="margin-bottom:5px" id="paceDifferenceChartButton">Show Pace Difference chart</button><br>
+	    <div id="gapChart" style="width: 900px; height: 500px; position: absolute; left: -10000px;"></div>
+	    <div id="paceDifferenceChart" style="width: 1400px; height: 500px; position: absolute; left: -10000px;"></div>
+		<div id="toolbar" class="ui-widget-header ui-corner-all" style="margin-bottom:5px">
+			<button id="play">play</button>
+			<button id="stop">stop</button>
+		</div>
+		<br><label>Time:</label>
+		<div id="slider" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all small-font" style="width: 50%;margin-bottom:5px;margin-top:2px"></div>
+		<label>Speed:</label>
+		<div id="speedSlider" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all small-font" style="width: 25%;margin-top:2px">
+		</div>
+	</div>
+    <div id="map-canvas" style="font-family: 'Trebuchet MS','Helvetica','Arial','Verdana','sans-serif';"/>
+  </body>
+</html>

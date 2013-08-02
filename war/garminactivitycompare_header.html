@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<title>%TITLE%</title>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+	  #toolbar {
+		padding: 4px;
+		display: inline-block;
+	  }
+	  .small-font {
+		font-family: 'Trebuchet MS','Helvetica','Arial','Verdana','sans-serif';
+		font-size: 62.5%;
+	  }
+    </style>
+    <link type="text/css" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" rel="Stylesheet"/>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script type="text/javascript" src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+	<script>
+	$(function() {
+		$( "#play" ).button({
+		text: false,
+		icons: {
+		primary: "ui-icon-play"
+		}
+		})
+		.click(function() {
+		var options;
+		if ( $( this ).text() === "play" ) {
+		options = {
+		label: "pause",
+		icons: {
+		primary: "ui-icon-pause"
+		}
+		};
+		play();
+		} else {
+		options = {
+		label: "play",
+		icons: {
+		primary: "ui-icon-play"
+		}
+		};
+		pause();
+		}
+		$( this ).button( "option", options );
+		});
+		
+		$( "#stop" ).button({
+		text: false,
+		icons: {
+		primary: "ui-icon-stop"
+		}
+		})
+		.click(function() {
+		$( "#play" ).button( "option", {
+		label: "play",
+		icons: {
+		primary: "ui-icon-play"
+		}
+		});
+		stop();
+		});
+		
+		$( "#slider" ).slider({  orientation: "horizontal", range: "min", animate: true, min: 0, max: %NUMPOINTS% });
+		$( "#slider" ).on( "slidestart", function( event, ui ) {
+			pauseFromSlide();
+		} );
+		$( "#slider" ).on( "slidestop", function( event, ui ) {
+			playFromSlide();
+		} );
+		$( "#slider" ).on( "slide", function( event, ui ) {
+			slide(ui.value);
+		} );
+		
+		$( "#speedSlider" ).slider({  orientation: "horizontal", range: "min", animate: true, value: 50, min: 10, max: 90 });
+		$( "#speedSlider" ).on( "slide", function( event, ui ) {
+			changeSpeed(ui.value);
+		} );
+	});
+	</script>
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?sensor=false&libraries=geometry">
+    </script>
+    <script type="text/javascript"
+      src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/infobox/1.1.12/src/infobox.js">
+    </script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+     google.load("visualization", "1", {packages:["corechart"]});
+	  var map;
+	  var updateDistance = 0;
+	  var marker1;
+	  var coords1;
+	  var coords2;
+	  var marker1;
+	  var marker2;
+	  var paused = true;
+	  var resume = false;
+	  var speed = 50;
+	  var position1 = 0;
+	  var position2 = 0;
+	  var infoBox;
+	  var infoBoxClearance = 175;
+	  var upArrow = '<font color="green">&#x25B2</font>';
+	  var neutral = '&#x25AC;';
+	  var downArrow = '<font color="red">&#x25BC;</font>';
+	  var lastGap = 0;
+	  var gapOverTimeChart = null;
+	  var paceDifferenceChart = null;
+	  var activityA = '%ACTIVITYA%';
+	  var activityB = '%ACTIVITYB%';

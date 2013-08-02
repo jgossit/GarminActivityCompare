@@ -6,6 +6,7 @@ package jgossit;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -298,10 +299,10 @@ public class GarminActivityCompare
 
 		}
 		
-		printHeader(lats[activityOrder[0]].size());
+		printHtml("garminactivitycompare_header.html",lats[activityOrder[0]].size());
 		for (String htmlLine : htmlContent)
 			printWriter.print(htmlLine);
-		printFooter();
+		printHtml("garminactivitycompare_footer.html", 0);
 				
 		if (activityDir != null)
 		{
@@ -416,375 +417,51 @@ public class GarminActivityCompare
 		go();
 	}
 	
-	private void printHeader(int numPoints)
+	private void printHtml(String filename, int numPoints)
 	{
-		printWriter.println("<!DOCTYPE html>");
-		printWriter.println("<html>");
-		printWriter.println("<title>" + title + "</title>");
-		printWriter.println("  <head>");
-		printWriter.println("    <meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\"/>");
-		printWriter.println("    <meta name=\"viewport\" content=\"initial-scale=1.0, user-scalable=no\" />");
-		printWriter.println("    <style type=\"text/css\">");
-		printWriter.println("      html { height: 100% }");
-		printWriter.println("      body { height: 100%; margin: 0; padding: 0 }");
-		printWriter.println("      #map-canvas { height: 100% }");
-		printWriter.println("	  #toolbar {");
-		printWriter.println("		padding: 4px;");
-		printWriter.println("		display: inline-block;");
-		printWriter.println("	  }");
-		printWriter.println("	  .small-font {");
-		printWriter.println("		font-family: 'Trebuchet MS','Helvetica','Arial','Verdana','sans-serif';");
-		printWriter.println("		font-size: 62.5%;");
-		printWriter.println("	  }");
-		printWriter.println("    </style>");
-		printWriter.println("    <link type=\"text/css\" href=\"http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css\" rel=\"Stylesheet\"/>");
-		printWriter.println("	<script type=\"text/javascript\" src=\"http://code.jquery.com/jquery-1.9.1.js\"></script>");
-		printWriter.println("	<script type=\"text/javascript\" src=\"http://code.jquery.com/ui/1.10.2/jquery-ui.js\"></script>");
-		printWriter.println("	<script>");
-		printWriter.println("	$(function() {");
-		printWriter.println("		$( \"#play\" ).button({");
-		printWriter.println("		text: false,");
-		printWriter.println("		icons: {");
-		printWriter.println("		primary: \"ui-icon-play\"");
-		printWriter.println("		}");
-		printWriter.println("		})");
-		printWriter.println("		.click(function() {");
-		printWriter.println("		var options;");
-		printWriter.println("		if ( $( this ).text() === \"play\" ) {");
-		printWriter.println("		options = {");
-		printWriter.println("		label: \"pause\",");
-		printWriter.println("		icons: {");
-		printWriter.println("		primary: \"ui-icon-pause\"");
-		printWriter.println("		}");
-		printWriter.println("		};");
-		printWriter.println("		play();");
-		printWriter.println("		} else {");
-		printWriter.println("		options = {");
-		printWriter.println("		label: \"play\",");
-		printWriter.println("		icons: {");
-		printWriter.println("		primary: \"ui-icon-play\"");
-		printWriter.println("		}");
-		printWriter.println("		};");
-		printWriter.println("		pause();");
-		printWriter.println("		}");
-		printWriter.println("		$( this ).button( \"option\", options );");
-		printWriter.println("		});");
-		printWriter.println("		");
-		printWriter.println("		$( \"#stop\" ).button({");
-		printWriter.println("		text: false,");
-		printWriter.println("		icons: {");
-		printWriter.println("		primary: \"ui-icon-stop\"");
-		printWriter.println("		}");
-		printWriter.println("		})");
-		printWriter.println("		.click(function() {");
-		printWriter.println("		$( \"#play\" ).button( \"option\", {");
-		printWriter.println("		label: \"play\",");
-		printWriter.println("		icons: {");
-		printWriter.println("		primary: \"ui-icon-play\"");
-		printWriter.println("		}");
-		printWriter.println("		});");
-		printWriter.println("		stop();");
-		printWriter.println("		});");
-		printWriter.println("		");
-		printWriter.println("		$( \"#slider\" ).slider({  orientation: \"horizontal\", range: \"min\", animate: true, min: 0, max: " + (numPoints-1) + " });");
-		printWriter.println("		$( \"#slider\" ).on( \"slidestart\", function( event, ui ) {");
-		printWriter.println("			pauseFromSlide();");
-		printWriter.println("		} );");
-		printWriter.println("		$( \"#slider\" ).on( \"slidestop\", function( event, ui ) {");
-		printWriter.println("			playFromSlide();");
-		printWriter.println("		} );");
-		printWriter.println("		$( \"#slider\" ).on( \"slide\", function( event, ui ) {");
-		printWriter.println("			slide(ui.value);");
-		printWriter.println("		} );");
-		printWriter.println("		");
-		printWriter.println("		$( \"#speedSlider\" ).slider({  orientation: \"horizontal\", range: \"min\", animate: true, value: 50, min: 10, max: 90 });");
-		printWriter.println("		$( \"#speedSlider\" ).on( \"slide\", function( event, ui ) {");
-		printWriter.println("			changeSpeed(ui.value);");
-		printWriter.println("		} );");
-		printWriter.println("	});");
-		printWriter.println("	</script>");
-		printWriter.println("    <script type=\"text/javascript\"");
-		printWriter.println("      src=\"https://maps.googleapis.com/maps/api/js?sensor=false&libraries=geometry\">");
-		printWriter.println("    </script>");
-		printWriter.println("    <script type=\"text/javascript\"");
-		printWriter.println("      src=\"http://google-maps-utility-library-v3.googlecode.com/svn/tags/infobox/1.1.12/src/infobox.js\">");
-		printWriter.println("    </script>");
-		printWriter.println("    <script type=\"text/javascript\" src=\"https://www.google.com/jsapi\"></script>");
-		printWriter.println("    <script type=\"text/javascript\">");
-		printWriter.println("     google.load(\"visualization\", \"1\", {packages:[\"corechart\"]});");
-		printWriter.println("	  var map;");
-		printWriter.println("	  var updateDistance = 0;");
-		printWriter.println("	  var marker1;");
-		printWriter.println("	  var coords1;");
-		printWriter.println("	  var coords2;");
-		printWriter.println("	  var marker1;");
-		printWriter.println("	  var marker2;");
-		printWriter.println("	  var paused = true;");
-		printWriter.println("	  var resume = false;");
-		printWriter.println("	  var speed = 50;");
-		printWriter.println("	  var position1 = 0;");
-		printWriter.println("	  var position2 = 0;");
-		printWriter.println("	  var infoBox;");
-		printWriter.println("	  var infoBoxClearance = 175;");
-		printWriter.println("	  var upArrow = '<font color=\"green\">&#x25B2</font>';");
-		printWriter.println("	  var neutral = '&#x25AC;';");
-		printWriter.println("	  var downArrow = '<font color=\"red\">&#x25BC;</font>';");
-		printWriter.println("	  var lastGap = 0;");
-		printWriter.println("	  var gapOverTimeChart = null;");
-		printWriter.println("	  var paceDifferenceChart = null;");
-		printWriter.println("	  var activityA = '" + activityLabels[0] + "';");
-		printWriter.println("	  var activityB = '" + activityLabels[1] + "';");
+		FileReader fr = null;
+		BufferedReader br = null;
+		try
+		{
+			fr = new FileReader(filename);
+			br = new BufferedReader(fr);
+			String line = null;
+			while ( (line = br.readLine()) != null)
+			{
+				line = line.replaceFirst("%TITLE%",title)
+					.replaceFirst("%ACTIVITYA%",activityLabels[0])
+					.replaceFirst("%ACTIVITYB%",activityLabels[1])
+					.replaceFirst("%NUMPOINTS%",""+(numPoints-1))
+					.replaceFirst("%GAPSCHARTDATA%",gapsChartData)
+					.replaceFirst("%PACEDIFFCHARTDATA%",paceDifferenceChartData)
+					.replaceFirst("%MARKERA%",markerAImageData)
+					.replaceFirst("%MARKERB%",markerBImageData);
+				printWriter.println(line);
+			}
+		}
+		catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if (br != null)
+					br.close();
+				if (fr != null)
+					fr.close();
+			}
+			catch (IOException e)
+			{
+			}
+		}
 	}
 	
-	private void printFooter()
-	{
-		printWriter.println("      function initialize()");
-		printWriter.println("	  {");
-		printWriter.println("        coords1 = new google.maps.MVCArray();");
-		printWriter.println("        for (i=0; i<lats1.length; i++)");
-		printWriter.println("        {");
-		printWriter.println("        	coords1.push(new google.maps.LatLng(lats1[i], lons1[i]));");
-		printWriter.println("        }");
-		printWriter.println("        coords2 = new google.maps.MVCArray();");
-		printWriter.println("        for (i=0; i<lats2.length; i++)");
-		printWriter.println("        {");
-		printWriter.println("        	coords2.push(new google.maps.LatLng(lats2[i], lons2[i]));");
-		printWriter.println("        }");
-		printWriter.println("        var mapOptions = {");
-		printWriter.println("          center: coords1.getAt(position1),");
-		printWriter.println("          zoom: 15,");
-		printWriter.println("          mapTypeId: google.maps.MapTypeId.ROADMAP");
-		printWriter.println("        };");
-		printWriter.println("        map = new google.maps.Map(document.getElementById(\"map-canvas\"),");
-		printWriter.println("            mapOptions);");
-		printWriter.println("		var polyline = new google.maps.Polyline({path:coords1});");
-		printWriter.println("		polyline.setMap(map);");
-		printWriter.println("");
-		printWriter.println("		reset();");
-		printWriter.println("		$('#gapChartButton').button().click(function()");
-		printWriter.println("		{");
-		printWriter.println("			var label = $(this).button('option','label');");
-		printWriter.println("			if (label == 'Show Gap over Time chart')");
-		printWriter.println("			{");
-		printWriter.println("				$(this).button('option','label','Hide Gap over Time chart');");
-		printWriter.println("				$('#gapChart').css('position','relative').css('left','0px');");
-		printWriter.println("				if (gapOverTimeChart == null)");
-		printWriter.println("			    {");
-		printWriter.println("                   var data = new google.visualization.DataTable();");
-		printWriter.println("                   data.addColumn('string', 'Time');");
-		printWriter.println("                   data.addColumn('number', 'Gap');");
-		printWriter.println("                   data.addColumn({type:'string', role:'annotation'});");
-		printWriter.println("                   data.addColumn({type:'string', role:'annotationText'});");
-		printWriter.println("                   data.addRows([");
-		printWriter.println("                     " + gapsChartData);
-		printWriter.println("                   ]);");
-		printWriter.println("                   var options = {");
-		printWriter.println("                     title: 'Gap (km) over time (mm:ss)', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
-		printWriter.println("                     legend:{position: 'none'}, vAxis:{title: 'Gap'}");
-		printWriter.println("                   };");
-		printWriter.println("                   gapOverTimeChart = new google.visualization.LineChart(document.getElementById('gapChart'));");
-		printWriter.println("                   gapOverTimeChart.draw(data, options);");
-		printWriter.println("			    }");
-		printWriter.println("			}");
-		printWriter.println("			else");
-		printWriter.println("			{");
-		printWriter.println("				$(this).button('option','label','Show Gap over Time chart');");
-		printWriter.println("				$('#gapChart').css('position','absolute').css('left','-100000px');");
-		printWriter.println("			}");
-		printWriter.println("		});");
-		printWriter.println("		$('#paceDifferenceChartButton').button().click(function()");
-		printWriter.println("		{");
-		printWriter.println("			var label = $(this).button('option','label');");
-		printWriter.println("			if (label == 'Show Pace Difference chart')");
-		printWriter.println("			{");
-		printWriter.println("				$(this).button('option','label','Hide Pace Difference chart');");
-		printWriter.println("				$('#paceDifferenceChart').css('position','relative').css('left','0px');");
-		printWriter.println("				if (paceDifferenceChart == null)");
-		printWriter.println("			    {");
-		printWriter.println("                   var data = new google.visualization.DataTable();");
-		printWriter.println("                   data.addColumn('string', 'Distance');");
-		printWriter.println("                   data.addColumn('number', activityA);");
-		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
-		printWriter.println("                   data.addColumn('number', activityB);");
-		printWriter.println("                   data.addColumn({type:'boolean', role:'emphasis'});");
-		printWriter.println("                   data.addRows([");
-		printWriter.println("                     " + paceDifferenceChartData);
-		printWriter.println("                   ]);");
-		printWriter.println("                   var options = {");
-		printWriter.println("                     title: 'Pace Difference', axisTitlesPosition: 'none', hAxis:{slantedTextAngle: 45},");
-		printWriter.println("                     vAxis:{title: 'Pace'}");
-		printWriter.println("                   };");
-		printWriter.println("                   paceDifferenceChart = new google.visualization.LineChart(document.getElementById('paceDifferenceChart'));");
-		printWriter.println("                   paceDifferenceChart.draw(data, options);");
-		printWriter.println("			    }");
-		printWriter.println("			}");
-		printWriter.println("			else");
-		printWriter.println("			{");
-		printWriter.println("				$(this).button('option','label','Show Pace Difference chart');");
-		printWriter.println("				$('#paceDifferenceChart').css('position','absolute').css('left','-100000px');");
-		printWriter.println("			}");
-		printWriter.println("		});");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function play()");
-		printWriter.println("	  {");
-		printWriter.println("		if (position1+1 == coords1.getLength()) //finished");
-		printWriter.println("		{");
-		printWriter.println("			position1 = 0;");
-		printWriter.println("			position2 = 0;");
-		printWriter.println("		}");
-		printWriter.println("		paused = false;");
-		printWriter.println("		resume = true;");
-		printWriter.println("		setTimeout(function() {");
-		printWriter.println("			move(position1, marker1, coords1, distance1);");
-		printWriter.println("		}, 0);");
-		printWriter.println("		setTimeout(function() {");
-		printWriter.println("			move(position2, marker2, coords2, distance2);");
-		printWriter.println("		}, 0);");
-		printWriter.println("	  }");
-		printWriter.println("	  function playFromSlide()");
-		printWriter.println("	  {");
-		printWriter.println("		if (resume)");
-		printWriter.println("		  play();");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function pause()");
-		printWriter.println("	  {");
-		printWriter.println("		paused = true;");
-		printWriter.println("	  }");
-		printWriter.println("	  function pauseFromSlide()");
-		printWriter.println("	  {");
-		printWriter.println("		if (paused)");
-		printWriter.println("		  resume = false;");
-		printWriter.println("		pause();");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function stop()");
-		printWriter.println("	  {");
-		printWriter.println("		paused = false;");
-		printWriter.println("		resume = false;");
-		printWriter.println("		infoBox.close();");
-		printWriter.println("		marker1.setMap(null);");
-		printWriter.println("		marker2.setMap(null);");
-		printWriter.println("		position1 = 0;");
-		printWriter.println("		position2 = 0;");
-		printWriter.println("		lastGap = 0;");
-		printWriter.println("		$( \"#slider\" ).slider( \"option\", \"value\", position1 );");
-		printWriter.println("		reset();");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function reset()");
-		printWriter.println("	  {");
-		printWriter.println("		marker1 = new google.maps.Marker({anchorPoint:new google.maps.Point(0,0),map:map,position:coords1.getAt(position1),clickable:false,zIndex:0,icon:'" + markerAImageData + "'});");
-		printWriter.println("		marker2 = new google.maps.Marker({anchorPoint:new google.maps.Point(0,0),map:map,position:coords2.getAt(position2),clickable:false,zIndex:1,icon:'" + markerBImageData + "'});");
-		printWriter.println("		infoBox = new InfoBox({closeBoxURL:\"\",enableEventPropagation:false,alignBottom:true,maxWidth:0,pixelOffset: new google.maps.Size(10, -40),boxStyle:{border: '1px solid black',opacity: 0.8,background:'white',whiteSpace:'nowrap',padding:'5px'}});");
-		printWriter.println("		infoBox.open(map, marker1);");
-		printWriter.println("		infoBox.setContent(activityA + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>' + activityB + ' distance 0.000km<br>&nbsp;&nbsp;&nbsp;pace 0.0kmh<br>Gap 0.000km');");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function slide(position)");
-		printWriter.println("	  {");
-		printWriter.println("		var gapChangeText = neutral;");
-		printWriter.println("		if (gap[position-1] > gap[position1-1])");
-		printWriter.println("			gapChangeText = upArrow;");
-		printWriter.println("		else if (gap[position-1] < gap[position1-1])");
-		printWriter.println("			gapChangeText = downArrow;");
-		printWriter.println("		position1 = position;");
-		printWriter.println("		marker1.setPosition(coords1.getAt(position1));");
-		printWriter.println("		position2 = position < coords2.getLength() ? position : coords2.getLength()-1;");
-		printWriter.println("		marker2.setPosition(coords2.getAt(position2));");
-		printWriter.println("		panMap(coords1.getAt(position1));");
-		printWriter.println("		updateDistance = 0;");
-		printWriter.println("		lastGap = gap[position-1];");
-		printWriter.println("		infoBox.setContent(activityA + ' distance ' + distance1[position1-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[position1] + 'kmh<br>' + activityB + ' distance ' + distance2[position2-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[position2] + 'kmh<br>Gap ' + (position1 == 0 ? '0.000' : gap[position1-1]) + 'km ' + gapChangeText);");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function panMap(coord)");
-		printWriter.println("	  {");
-		printWriter.println("		var mapBounds = map.getBounds();");
-		printWriter.println("		if (mapBounds != null && coord != null)");
-		printWriter.println("		{");
-		printWriter.println("			var ne = mapBounds.getNorthEast();");
-		printWriter.println("			var sw = mapBounds.getSouthWest();");
-		printWriter.println("			var mapCanvasProjection = infoBox.getProjection();");
-		printWriter.println("			var coordPixelPoint = mapCanvasProjection.fromLatLngToContainerPixel(coord);");
-		printWriter.println("			var nePixelPoint = mapCanvasProjection.fromLatLngToContainerPixel(ne);");
-		printWriter.println("			if (coordPixelPoint.x+infoBoxClearance > nePixelPoint.x || coordPixelPoint.y-infoBoxClearance < nePixelPoint.y)");
-		printWriter.println("			{");
-		printWriter.println("				map.panTo(coord);");
-		printWriter.println("			}");
-		printWriter.println("			else if ( (coord.lat() < ne.lat() && coord.lat() < sw.lat()) ||");
-		printWriter.println("				 (coord.lat() > ne.lat() && coord.lat() > sw.lat()) ||");
-		printWriter.println("				 (coord.lng() < ne.lng() && coord.lng() < sw.lng()) ||");
-		printWriter.println("				 (coord.lng() > ne.lng() && coord.lng() > sw.lng()) )");
-		printWriter.println("			{");
-		printWriter.println("				map.panTo(coord);");
-		printWriter.println("			}");
-		printWriter.println("		}");
-		printWriter.println("	  }");
-		printWriter.println("	  ");
-		printWriter.println("	  function changeSpeed(value)");
-		printWriter.println("	  {");
-		printWriter.println("		speed = value;");
-		printWriter.println("	  }");
-		printWriter.println("");
-		printWriter.println("	function move(pos, mark, coords, distance)");
-		printWriter.println("	{");
-		printWriter.println("		if (paused)");
-		printWriter.println("			return;");
-		printWriter.println("		panMap(coords.getAt(pos+1));");
-		printWriter.println("		mark.setPosition(coords.getAt(pos));");
-		printWriter.println("		if (mark == marker1)");
-		printWriter.println("		{");
-		printWriter.println("			updateDistance++;");
-		printWriter.println("			if (updateDistance == 20)");
-		printWriter.println("			{");
-		printWriter.println("				updateDistance = 0;");
-		printWriter.println("				var gapChangeText = neutral;");
-		printWriter.println("				if (gap[pos-1] > lastGap)");
-		printWriter.println("					gapChangeText = upArrow;");
-		printWriter.println("				else if (gap[pos-1] < lastGap)");
-		printWriter.println("					gapChangeText = downArrow;");
-		printWriter.println("				lastGap = gap[pos-1];");
-		printWriter.println("				infoBox.setContent(activityA + ' distance ' + distance1[pos-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace1[pos] + 'kmh<br>' + activityB + ' distance ' + distance2[pos-1 < distance2.length ? pos-1 : distance2.length-1] + 'km<br>&nbsp;&nbsp;&nbsp;pace ' + pace2[pos < pace2.length ? pos : pace2.length-1] + 'kmh<br>Gap ' + gap[pos-1] + 'km ' + gapChangeText);");
-		printWriter.println("			}");
-		printWriter.println("			position1 = pos+1;");
-		printWriter.println("			$( \"#slider\" ).slider( \"option\", \"value\", position1 );");
-		printWriter.println("		}");
-		printWriter.println("		else");
-		printWriter.println("			position2 = pos+1;");
-		printWriter.println("		pos++;");
-		printWriter.println("		if (pos+1 < coords.getLength())");
-		printWriter.println("			setTimeout(function() {");
-		printWriter.println("				move(pos, mark, coords, distance);");
-		printWriter.println("			}, 1000/speed);");
-		printWriter.println("	}");
-		printWriter.println("");
-		printWriter.println("      google.maps.event.addDomListener(window, 'load', initialize);");
-		printWriter.println("    </script>");
-
-		printWriter.println("  </head>");
-		printWriter.println("  <body>");
-		printWriter.println("	<div align=\"center\" class=\"small-font\" style=\"padding-top:5px; padding-bottom:5px\">");
-		printWriter.println("	<button style=\"margin-bottom:5px\" id=\"gapChartButton\">Show Gap over Time chart</button><br>");
-		printWriter.println("	<button style=\"margin-bottom:5px\" id=\"paceDifferenceChartButton\">Show Pace Difference chart</button><br>");
-		printWriter.println("	    <div id=\"gapChart\" style=\"width: 900px; height: 500px; position: absolute; left: -10000px;\"></div>");
-		printWriter.println("	    <div id=\"paceDifferenceChart\" style=\"width: 1400px; height: 500px; position: absolute; left: -10000px;\"></div>");
-		printWriter.println("		<div id=\"toolbar\" class=\"ui-widget-header ui-corner-all\" style=\"margin-bottom:5px\">");
-		printWriter.println("			<button id=\"play\">play</button>");
-		printWriter.println("			<button id=\"stop\">stop</button>");
-		printWriter.println("		</div>");
-		printWriter.println("		<br><label>Time:</label>");
-		printWriter.println("		<div id=\"slider\" class=\"ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all small-font\" style=\"width: 50%;margin-bottom:5px;margin-top:2px\"></div>");
-		printWriter.println("		<label>Speed:</label>");
-		printWriter.println("		<div id=\"speedSlider\" class=\"ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all small-font\" style=\"width: 25%;margin-top:2px\">");
-		printWriter.println("		</div>");
-		printWriter.println("	</div>");
-		printWriter.println("    <div id=\"map-canvas\" style=\"font-family: 'Trebuchet MS','Helvetica','Arial','Verdana','sans-serif';\"/>");
-		printWriter.println("  </body>");
-		printWriter.println("</html>");
-	}
-
 	public static double distanceBetween(double lat1, double lng1, double lat2, double lng2)
 	{
 	    int earthRadius = 6371;
